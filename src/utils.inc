@@ -4,5 +4,6 @@ extern strlen
 extern prints
 extern printn
 extern printc
+extern printu
 extern exit
 %endif

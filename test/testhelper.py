@@ -81,9 +81,13 @@ def expect_stdout_to_be(s):
     return checker
 
 def failed_msg(name, expected, got):
-    s1 = '  * Expected `{}` to be: {}\n'.format(name, repr(expected))
-    s2 = 'got: {}'.format(repr(got)).rjust(len(s1) - 2)
-    return colored(s1 + s2, 'yellow')
+    e = '  * Expected `{}` to be: '.format(name)
+    e1 = '{}{}\n'.format(e, repr(expected))
+
+    g = 'got: '.rjust(len(e))
+    g1 = '{}{}'.format(g, repr(got))
+
+    return colored(e1 + g1, 'yellow')
 
 def build_test_case(name, compiler_options=[]):
     """Builds the executable with the given name"""

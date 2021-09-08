@@ -86,9 +86,47 @@ def printc_test():
         checker = expect_stdout_to_be(out)
         test_case('printc_test', args=[arg], checker=checker)
 
+def printu_test():
+    cases = [
+        (0, '0'),
+        ('0', '0'),
+        ('0x0', '0'),
+        ('"0"', '48'),
+        ('0x30', '48'),
+
+        (1, '1'),
+        ('1', '1'),
+        ('0x01', '1'),
+        ('"1"', '49'),
+        ('0x31', '49'),
+
+        (10, '10'),
+        ('10', '10'),
+        ('0xa', '10'),
+        ('0xA', '10'),
+
+        (123, '123'),
+        ('123', '123'),
+        ('0x7b', '123'),
+        ('0x7B', '123'),
+
+        (1024, '1024'),
+        ('1024', '1024'),
+        ('0x0400', '1024'),
+
+        (-1, '18446744073709551615'),
+        ('-1', '18446744073709551615'),
+        ('0xffffffffffffffff', '18446744073709551615')
+    ]
+
+    for (arg, out) in cases:
+        checker = expect_stdout_to_be(out)
+        test_case('printu_test', args=[arg], checker=checker)
+
 if __name__ == '__main__':
     setup()
     strlen_test()
     prints_test()
     printn_test()
     printc_test()
+    printu_test()
