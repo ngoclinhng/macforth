@@ -168,6 +168,12 @@ def printi_test():
         checker = expect_stdout_to_be(out)
         test_case('printi_test', args=[arg], checker=checker)
 
+def readc_test():
+    inputs = ['', ' ', 'a']
+    for i in inputs:
+        checker = expect_status_to_be(0 if i == '' else ord(i[0]))
+        test_case('readc_test', checker=checker, stdin=i)
+
 if __name__ == '__main__':
     setup()
     strlen_test()
@@ -176,3 +182,4 @@ if __name__ == '__main__':
     printc_test()
     printu_test()
     printi_test()
+    readc_test()

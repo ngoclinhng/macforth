@@ -7,6 +7,7 @@ global printn
 global printc
 global printu
 global printi
+global readc
 global exit
 
 section .text
@@ -147,6 +148,10 @@ printi:
 
     neg rdi
     jmp printu
+
+;;
+readc:
+    ret
 
 ;; Function: exit(rdi) ->
 ;;
