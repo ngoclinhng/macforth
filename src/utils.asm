@@ -2,6 +2,7 @@
 
 ;; Export symbols
 global strlen
+global prints
 global exit
 
 section .text
@@ -21,6 +22,25 @@ strlen:
     inc rax
     jmp .loop
 .end:
+    ret
+
+;; Function: prints(rdi) -> stdout.
+;;
+;; Arguments:
+;;   rdi: a pointer to a null-terminated string.
+;;
+;; Description: Takes as argument a pointer to a null-terminated string,
+;;              and outputs it to stdout.
+prints:
+    push rdi
+    call strlen
+    pop rsi                     ; source
+    mov rdx, rax                ; num bytes to be written
+
+    mov rax, SYSCALL_WRITE
+    mov rdi, STDOUT_FILENO      ; destination
+    syscall
+
     ret
 
 ;; Function: exit(rdi) ->
