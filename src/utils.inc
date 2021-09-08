@@ -5,5 +5,6 @@ extern prints
 extern printn
 extern printc
 extern printu
+extern printi
 extern exit
 %endif

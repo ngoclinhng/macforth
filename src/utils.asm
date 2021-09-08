@@ -6,6 +6,7 @@ global prints
 global printn
 global printc
 global printu
+global printi
 global exit
 
 section .text
@@ -128,6 +129,24 @@ printu:
     add rsp, 24                 ; restore rsp
     ret
 
+;; Function: printi(rdi) -> stdout.
+;;
+;; Arguments:
+;;   rdi: 8-byte, signed integer
+;;
+;; Description: Takes as input 8-byte, signed integer, and outputs it
+;;              to stdout.
+printi:
+    test rdi, rdi
+    jns printu
+
+    push rdi
+    mov rdi, '-'
+    call printc
+    pop rdi
+
+    neg rdi
+    jmp printu
 
 ;; Function: exit(rdi) ->
 ;;

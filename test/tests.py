@@ -123,6 +123,51 @@ def printu_test():
         checker = expect_stdout_to_be(out)
         test_case('printu_test', args=[arg], checker=checker)
 
+def printi_test():
+    cases = [
+        (0, '0'),
+        ('0', '0'),
+        ('0x0', '0'),
+        ('"0"', '48'),
+        ('0x30', '48'),
+
+        (1, '1'),
+        ('1', '1'),
+        ('0x01', '1'),
+        ('"1"', '49'),
+        ('0x31', '49'),
+
+        (10, '10'),
+        ('10', '10'),
+        ('0xa', '10'),
+        ('0xA', '10'),
+
+        (123, '123'),
+        ('123', '123'),
+        ('0x7b', '123'),
+        ('0x7B', '123'),
+
+        (1024, '1024'),
+        ('1024', '1024'),
+        ('0x0400', '1024'),
+
+        (-1, '-1'),
+        ('-1', '-1'),
+        ('0xffffffffffffffff', '-1'),
+
+        (-12, '-12'),
+        ('-12', '-12'),
+        ('0xfffffffffffffff4', '-12'),
+
+        (-123, '-123'),
+        ('-123', '-123'),
+        ('0xffffffffffffff85', '-123')
+    ]
+
+    for (arg, out) in cases:
+        checker = expect_stdout_to_be(out)
+        test_case('printi_test', args=[arg], checker=checker)
+
 if __name__ == '__main__':
     setup()
     strlen_test()
@@ -130,3 +175,4 @@ if __name__ == '__main__':
     printn_test()
     printc_test()
     printu_test()
+    printi_test()
