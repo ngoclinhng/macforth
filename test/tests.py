@@ -169,7 +169,7 @@ def printi_test():
         test_case('printi_test', args=[arg], checker=checker)
 
 def readc_test():
-    inputs = ['', ' ', 'a']
+    inputs = ['', ' ', '  ', 'a', 'hi', 'a b c', 'foo', 'bar']
     for i in inputs:
         checker = expect_status_to_be(0 if i == '' else ord(i[0]))
         test_case('readc_test', checker=checker, stdin=i)

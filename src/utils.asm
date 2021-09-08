@@ -149,8 +149,19 @@ printi:
     neg rdi
     jmp printu
 
-;;
+;; Function: readc(stdin) -> rax.
+;; Description: Reads next character from stdin and stores in in rax. If
+;;              the end of input stream occurs, rax will hold zero instead.
 readc:
+    push 0
+
+    mov rax, SYSCALL_READ
+    mov rdi, STDIN_FILENO       ; source
+    mov rsi, rsp                ; buffer
+    mov rdx, 1                  ; read 1 byte
+    syscall
+
+    pop rax
     ret
 
 ;; Function: exit(rdi) ->
