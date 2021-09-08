@@ -1,5 +1,6 @@
 from pathlib import Path
-from testhelper import nasm, test_case, expect_status_to_be
+from testhelper import nasm, test_case
+from testhelper import expect_status_to_be, expect_stdout_to_be
 from termcolor import colored
 
 def build_utils():
@@ -43,6 +44,25 @@ def strlen_test():
         checker = expect_status_to_be(l)
         test_case('strlen_test', args=[s], checker=checker)
 
+def prints_test():
+    cases = [
+        ('db 0', ''),
+        ('db "",0', ''),
+        ('db 10,0', '\n'),
+        ('db 0x0a,0', '\n'),
+        ('db 0x0A,0', '\n'),
+        ('db "Hi!",0', 'Hi!'),
+        ('db 0x48,0x69,0x21,0x00', 'Hi!'),
+        ('db "Hello there"', 'Hello there'),
+        ('db 0x48,0x65,0x6c,0x6c,0x6f,0x20,0x74,0x68,0x65,0x72,0x65,0x00',
+         'Hello there')
+    ]
+
+    for (arg, out) in cases:
+        checker = expect_stdout_to_be(out)
+        test_case('prints_test', args=[arg], checker=checker)
+
 if __name__ == '__main__':
     setup()
     strlen_test()
+    prints_test()

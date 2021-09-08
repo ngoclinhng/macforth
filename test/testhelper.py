@@ -45,16 +45,16 @@ def test_case(name, checker, args=[], stdin=''):
         if check_ok:
             print(colored('PASSED', 'green'))
             print_args(args)
-            print('  * stdin:  {}'.format(stdin))
-            print('  * stdout: {}'.format(stdout))
-            print('  * status: {}'.format(status))
+            print('  * stdin:  {}'.format(repr(stdin)))
+            print('  * stdout: {}'.format(repr(stdout)))
+            print('  * status: {}'.format(repr(status)))
         else:
             print(colored('FAILED', 'red'))
             print(check_msg)
             print_args(args)
-            print('  * stdin:  {}'.format(stdin))
-            print('  * stdout: {}'.format(stdout))
-            print('  * status: {}'.format(status))
+            print('  * stdin:  {}'.format(repr(stdin)))
+            print('  * stdout: {}'.format(repr(stdout)))
+            print('  * status: {}'.format(repr(status)))
     else:
         print(colored('Failed to build executable', 'red'))
         print_args(args)
@@ -66,11 +66,24 @@ def expect_status_to_be(s):
         if status == s:
             return (True, msg)
         else:
-            msg = '  * Expected `status` to be: {}\n'.format(s)
-            msg = '{}                        got: {}'.format(msg, status)
-            msg = colored(msg, 'yellow')
+            msg = failed_msg('status', s, status)
             return (False, msg)
     return checker
+
+def expect_stdout_to_be(s):
+    def checker(args, stdin, stdout, status):
+        msg = ''
+        if stdout == s:
+            return (True, msg)
+        else:
+            msg = failed_msg('stdout', s, stdout)
+            return (False, msg)
+    return checker
+
+def failed_msg(name, expected, got):
+    s1 = '  * Expected `{}` to be: {}\n'.format(name, repr(expected))
+    s2 = 'got: {}'.format(repr(got)).rjust(len(s1) - 2)
+    return colored(s1 + s2, 'yellow')
 
 def build_test_case(name, compiler_options=[]):
     """Builds the executable with the given name"""
@@ -114,7 +127,7 @@ def run_test_case(name, stdin=''):
 def print_args(args):
     print('  * args:')
     for i, v in enumerate(args):
-        print('    ARG{}={}'.format(i, v))
+        print('    ARG{}={}'.format(i, repr(v)))
 
 def nasm(name, sources=[], options=[]):
     """
