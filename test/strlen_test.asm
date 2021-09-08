@@ -10,4 +10,4 @@ _main:
     call exit
 
 section .data
-str: db 'Hello, world!',0
+str: ARG0
