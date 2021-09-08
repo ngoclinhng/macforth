@@ -3,6 +3,8 @@
 ;; Export symbols
 global strlen
 global prints
+global printn
+global printc
 global exit
 
 section .text
@@ -41,6 +43,32 @@ prints:
     mov rdi, STDOUT_FILENO      ; destination
     syscall
 
+    ret
+
+;; Function: printn() -> stdout.
+;; Description: outputs newline character to stdout.
+;; Note that: this function doesn't actually do anything except write
+;; the newline character into rdi, which then gets passed into `printc`
+;; right below it.
+printn:
+    mov rdi, 10
+
+;; Function: printc(rdi) -> stdout.
+;;
+;; Arguments:
+;;   rdi: single character code
+;;
+;; Description: Takes as argument a single character code and outputs it
+;;              to stdout.
+printc:
+    ; FIXME: the following implementation implicitly assumes that the
+    ; target machine is Little Endian, so that after pushing rdi on top
+    ; of the stack, rsp is the address of the least significant byte
+    ; in rdi (dl).
+    push rdi
+    mov rdi, rsp
+    call prints
+    pop rdi
     ret
 
 ;; Function: exit(rdi) ->

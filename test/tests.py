@@ -62,7 +62,33 @@ def prints_test():
         checker = expect_stdout_to_be(out)
         test_case('prints_test', args=[arg], checker=checker)
 
+def printn_test():
+    checker = expect_stdout_to_be('\n')
+    test_case('printn_test', args=[], checker=checker)
+
+def printc_test():
+    cases = [
+        ('" "', ' '),
+        ('0x20', ' '),
+        (32, ' '),
+
+        ('"\n"', '\n'),
+        ('0x0a', '\n'),
+        ('0x0A', '\n'),
+        (10, '\n'),
+
+        ('"a"', 'a'),
+        ('0x61', 'a'),
+        (97, 'a')
+    ]
+
+    for (arg, out) in cases:
+        checker = expect_stdout_to_be(out)
+        test_case('printc_test', args=[arg], checker=checker)
+
 if __name__ == '__main__':
     setup()
     strlen_test()
     prints_test()
+    printn_test()
+    printc_test()
