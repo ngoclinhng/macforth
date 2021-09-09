@@ -333,6 +333,26 @@ def parseu_test():
 
     return (tcount, fcount)
 
+def parsei_test():
+    tcount = 0
+    fcount = 0
+
+    cases = [
+        ('"0"', '0', 1)
+    ]
+
+    for (i, o, _) in cases:
+        tcount += 1
+        checker = expect_stdout_to_be(o)
+        fcount += test_case('parsei_test', checker=checker, args=[i])
+
+    for (i, _, s) in cases:
+        tcount += 1
+        checker = expect_status_to_be(s)
+        fcount += test_case('parsei_test', checker=checker, args=[i])
+
+    return (tcount, fcount)
+
 TEST_SUITES = {
     'strlen': strlen_test,
     'prints': prints_test,
@@ -342,7 +362,8 @@ TEST_SUITES = {
     'printi': printi_test,
     'readc': readc_test,
     'readw': readw_test,
-    'parseu': parseu_test
+    'parseu': parseu_test,
+    'parsei': parsei_test
 }
 
 def print_summary(summary):

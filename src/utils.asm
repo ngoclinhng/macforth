@@ -10,6 +10,7 @@ global printi
 global readc
 global readw
 global parseu
+global parsei
 global exit
 
 ;; whitespace characters: space, newline, carriage return, horizontal tab
@@ -339,6 +340,9 @@ parseu:
 
 .end:
     mov rdx, rcx
+    ret
+
+parsei:
     ret
 
 ;; Function: exit(rdi) ->

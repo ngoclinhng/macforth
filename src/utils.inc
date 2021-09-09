@@ -9,5 +9,6 @@ extern printi
 extern readc
 extern readw
 extern parseu
+extern parsei
 extern exit
 %endif
