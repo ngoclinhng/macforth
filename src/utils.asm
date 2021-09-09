@@ -296,6 +296,49 @@ readw:
 ;;              Note that: the input string must starts with a digit
 ;;              (0 is fine).
 parseu:
+    ; The final number will be stored
+    ; in rax. rcx is used to keep track
+    ; of digits count.
+    xor rax, rax
+    xor rcx, rcx
+
+    ; Each time a next digit is read,
+    ; we update rax as follows:
+    ; rax = rax * 10 + `that next digit`.
+    mov r8, 10
+
+.loop:
+    ; read next digit, we have to
+    ; `move zero-extended` here.
+    movzx r9, byte [rdi + rcx]
+
+    ; since the byte range for digit
+    ; 0-9 is 0x30-0x39 (see man ascii),
+    ; if this digit is bellow or above this
+    ; range, goto .end
+    cmp r9b, 0x30
+    jb .end
+    cmp r9b, 0x39
+    ja .end
+
+    ; Before updating rax with this
+    ; new digit, we need to convert
+    ; it to the byte value which
+    ; evaluates to the digit itself.
+    and r9b, 0x0f
+
+    ; update rax with new digit
+    ; rax = rax * 10 + r9b
+    mul r8
+    add rax, r9
+
+    ; increment digits count, and
+    ; loop back.
+    inc rcx
+    jmp .loop
+
+.end:
+    mov rdx, rcx
     ret
 
 ;; Function: exit(rdi) ->
