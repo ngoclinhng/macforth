@@ -9,6 +9,7 @@ global printu
 global printi
 global readc
 global readw
+global parseu
 global exit
 
 ;; whitespace characters: space, newline, carriage return, horizontal tab
@@ -283,6 +284,19 @@ readw:
 
     ret
 
+;; Function: parseu(rdi) -> (rax, rdx).
+;;
+;; Arguments:
+;;   rdi: a pointer to a null-terminated string (which supposed to be
+;;        representing an unsigned integer, like '123').
+;;
+;; Description: Parses an unsigned (8-byte) integer from the start of the
+;;              given null-terminated string, and returns the parsed number
+;;              in rax and its digits count in rdx.
+;;              Note that: the input string must starts with a digit
+;;              (0 is fine).
+parseu:
+    ret
 
 ;; Function: exit(rdi) ->
 ;;

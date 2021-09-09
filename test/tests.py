@@ -225,6 +225,15 @@ def readw_test():
         checker = expect_status_to_be(len(e))
         test_case('readw_test', checker=checker, stdin=i)
 
+def parseu_test():
+    cases = [
+        ('0', '0', 1)
+    ]
+
+    for (i, o, _) in cases:
+        checker = expect_stdout_to_be(o)
+        test_case('parseu_test', checker=checker, args=[i])
+
 if __name__ == '__main__':
     setup()
     strlen_test()
@@ -235,3 +244,4 @@ if __name__ == '__main__':
     printi_test()
     readc_test()
     readw_test()
+    parseu_test()
