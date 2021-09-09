@@ -8,7 +8,14 @@ global printc
 global printu
 global printi
 global readc
+global readw
 global exit
+
+;; whitespace characters: space, newline, carriage return, horizontal tab
+%define SP_CHAR_CODE 32
+%define NL_CHAR_CODE 10
+%define CR_CHAR_CODE 13
+%define HT_CHAR_CODE 9
 
 section .text
 
@@ -163,6 +170,119 @@ readc:
 
     pop rax
     ret
+
+;; Function: readw(rdi, rsi) -> (rax, rdx).
+;;
+;; Arguments:
+;;   rdi: the buffer's address.
+;;   rsi: the buffer's size.
+;;
+;; Description: Reads at most (size - 1) consecutive, non-whitespace
+;;              characters from stdin and stores the null-terminated
+;;              string into the buffer (whose address is stored in rdi).
+;;              When this function returns, rax will hold the buffer's
+;;              address (which is also the address of the null-terminated
+;;              string has just been read) and rdx will hold the string's
+;;              length.
+;;              If the word is too big for the specified buffer size, rax
+;;              will hold zero instead.
+;;              Note that: readw will skip all leading whitespaces until it
+;;              encounters a non-whitespace character or the end of input
+;;              stream.
+readw:
+    ; r14 will store the index into the
+    ; buffer of next character, and r15
+    ; will store the maximum number of
+    ; characters allowed (equal to buffer's size - 1).
+    push r14
+    push r15
+
+    ; Initialize index and maximum number
+    ; of characters allowed.
+    xor r14, r14
+    mov r15, rsi
+    dec r15
+
+.read_first_char:
+    ; Read next character from stdin,
+    ; and the store result in rax.
+    push rdi
+    call readc
+    pop rdi
+
+    ; Skip this character if it is one
+    ; of the whitespace characters.
+    cmp al, SP_CHAR_CODE
+    je .read_first_char
+    cmp al, NL_CHAR_CODE
+    je .read_first_char
+    cmp al, CR_CHAR_CODE
+    je .read_first_char
+    cmp al, HT_CHAR_CODE
+    je .read_first_char
+
+    ; If we reach the end of input stream,
+    ; goto .end
+    test al, al
+    jz .end
+
+.loop:
+    ; store previously read character
+    ; at desired index.
+    mov byte [rdi + r14], al
+    inc r14
+
+    ; Read next character
+    push rdi
+    call readc
+    pop rdi
+
+    ; If it is one of the whitespace characters,
+    ; break out of the loop, and goto .end
+    cmp al, SP_CHAR_CODE
+    je .end
+    cmp al, NL_CHAR_CODE
+    je .end
+    cmp al, CR_CHAR_CODE
+    je .end
+    cmp al, HT_CHAR_CODE
+    je .end
+
+    ; If the end of input stream occurs,
+    ; break out of the loop, and goto .end
+    test al, al
+    jz .end
+
+    ; al is a `normal` character but we
+    ; have just reached the maximum number
+    ; of characters allowed. If this is
+    ; the case, goto .error
+    cmp r14, r15
+    je .error
+
+    ; Otherwise, loop back.
+    jmp .loop
+
+.error:
+    xor rax, rax
+    pop r15
+    pop r14
+    ret
+
+.end:
+    ; write null-terminator
+    mov byte [rdi + r14], 0
+
+    ; return values
+    mov rax, rdi
+    mov rdx, r14
+
+    ; restore callee-saved registers
+    pop r15
+    pop r14
+
+    ret
+
 
 ;; Function: exit(rdi) ->
 ;;

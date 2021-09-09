@@ -48,6 +48,7 @@ def test_case(name, checker, args=[], stdin=''):
             print('  * stdin:  {}'.format(repr(stdin)))
             print('  * stdout: {}'.format(repr(stdout)))
             print('  * status: {}'.format(repr(status)))
+            return 0
         else:
             print(colored('FAILED', 'red'))
             print(check_msg)
@@ -55,10 +56,12 @@ def test_case(name, checker, args=[], stdin=''):
             print('  * stdin:  {}'.format(repr(stdin)))
             print('  * stdout: {}'.format(repr(stdout)))
             print('  * status: {}'.format(repr(status)))
+            return 1
     else:
         print(colored('Failed to build executable', 'red'))
         print_args(args)
         print('  * stderr: {}'.format(colored(msg, 'yellow')))
+        return 1
 
 def expect_status_to_be(s):
     def checker(args, stdin, stdout, status):

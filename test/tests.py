@@ -174,6 +174,57 @@ def readc_test():
         checker = expect_status_to_be(0 if i == '' else ord(i[0]))
         test_case('readc_test', checker=checker, stdin=i)
 
+def readw_test():
+    cases = [
+        ('', ''),
+        (' ', ''),
+        ('\n', ''),
+        ('\r', ''),
+        ('\t', ''),
+
+        ('a', 'a'),
+        (' a', 'a'),
+        ('\na', 'a'),
+        ('\ra', 'a'),
+        ('\ta', 'a'),
+        ('a b', 'a'),
+        ('a\nb', 'a'),
+        ('a\rb', 'a'),
+        ('a\tb', 'a'),
+        (' \t a\nb', 'a'),
+
+        ('1', '1'),
+        (' 1', '1'),
+        ('\n1', '1'),
+        ('\r1', '1'),
+        ('\t1', '1'),
+        ('1 2', '1'),
+        ('1\n2', '1'),
+        ('1\r2', '1'),
+        ('1\t2', '1'),
+        (' \t 1\n2', '1'),
+
+        ('ab', 'ab'),
+        (' ab', 'ab'),
+        ('\nab', 'ab'),
+        ('\rab', 'ab'),
+        ('\tab', 'ab'),
+        (' \tab\thello world!', 'ab'),
+
+        ('1 and 2', '1'),
+        ('foo and bar', 'foo'),
+        ('1234567 and 8', '1234567'),
+        ('abcdefg and hijklmn', 'abcdefg')
+    ]
+
+    for (i,e) in cases:
+        checker = expect_stdout_to_be(e)
+        test_case('readw_test', checker=checker, stdin=i)
+
+    for (i,e) in cases:
+        checker = expect_status_to_be(len(e))
+        test_case('readw_test', checker=checker, stdin=i)
+
 if __name__ == '__main__':
     setup()
     strlen_test()
@@ -183,3 +234,4 @@ if __name__ == '__main__':
     printu_test()
     printi_test()
     readc_test()
+    readw_test()
