@@ -1,7 +1,10 @@
+import sys
 from pathlib import Path
 from testhelper import nasm, test_case
 from testhelper import expect_status_to_be, expect_stdout_to_be
 from termcolor import colored
+from functools import reduce
+import random
 
 def build_utils():
     target = 'utils'
@@ -23,10 +26,13 @@ def setup():
     build_utils()
 
 #
-# TEST CASES.
+# TEST SUITES.
 #
 
 def strlen_test():
+    tcount = 0
+    fcount = 0
+
     ls1 = 'Hello, world!'
     ls2 = 'This string is pretty long string'
 
@@ -41,10 +47,16 @@ def strlen_test():
     ]
 
     for (s, l) in cases:
+        tcount += 1
         checker = expect_status_to_be(l)
-        test_case('strlen_test', args=[s], checker=checker)
+        fcount += test_case('strlen_test', args=[s], checker=checker)
+
+    return (tcount, fcount)
 
 def prints_test():
+    tcount = 0
+    fcount = 0
+
     cases = [
         ('db 0', ''),
         ('db "",0', ''),
@@ -59,14 +71,21 @@ def prints_test():
     ]
 
     for (arg, out) in cases:
+        tcount += 1
         checker = expect_stdout_to_be(out)
-        test_case('prints_test', args=[arg], checker=checker)
+        fcount += test_case('prints_test', args=[arg], checker=checker)
+
+    return (tcount, fcount)
 
 def printn_test():
     checker = expect_stdout_to_be('\n')
-    test_case('printn_test', args=[], checker=checker)
+    fcount = test_case('printn_test', args=[], checker=checker)
+    return (1, fcount)
 
 def printc_test():
+    tcount = 0
+    fcount = 0
+
     cases = [
         ('" "', ' '),
         ('0x20', ' '),
@@ -83,10 +102,16 @@ def printc_test():
     ]
 
     for (arg, out) in cases:
+        tcount += 1
         checker = expect_stdout_to_be(out)
-        test_case('printc_test', args=[arg], checker=checker)
+        fcount +=test_case('printc_test', args=[arg], checker=checker)
+
+    return (tcount, fcount)
 
 def printu_test():
+    tcount = 0
+    fcount = 0
+
     cases = [
         (0, '0'),
         ('0', '0'),
@@ -120,10 +145,16 @@ def printu_test():
     ]
 
     for (arg, out) in cases:
+        tcount += 1
         checker = expect_stdout_to_be(out)
-        test_case('printu_test', args=[arg], checker=checker)
+        fcount += test_case('printu_test', args=[arg], checker=checker)
+
+    return (tcount, fcount)
 
 def printi_test():
+    tcount = 0
+    fcount = 0
+
     cases = [
         (0, '0'),
         ('0', '0'),
@@ -165,16 +196,29 @@ def printi_test():
     ]
 
     for (arg, out) in cases:
+        tcount += 1
         checker = expect_stdout_to_be(out)
-        test_case('printi_test', args=[arg], checker=checker)
+        fcount += test_case('printi_test', args=[arg], checker=checker)
+
+    return (tcount, fcount)
 
 def readc_test():
+    tcount = 0
+    fcount = 0
+
     inputs = ['', ' ', '  ', 'a', 'hi', 'a b c', 'foo', 'bar']
+
     for i in inputs:
+        tcount += 1
         checker = expect_status_to_be(0 if i == '' else ord(i[0]))
-        test_case('readc_test', checker=checker, stdin=i)
+        fcount += test_case('readc_test', checker=checker, stdin=i)
+
+    return (tcount, fcount)
 
 def readw_test():
+    tcount = 0
+    fcount = 0
+
     cases = [
         ('', ''),
         (' ', ''),
@@ -218,14 +262,21 @@ def readw_test():
     ]
 
     for (i,e) in cases:
+        tcount += 1
         checker = expect_stdout_to_be(e)
-        test_case('readw_test', checker=checker, stdin=i)
+        fcount += test_case('readw_test', checker=checker, stdin=i)
 
     for (i,e) in cases:
+        tcount += 1
         checker = expect_status_to_be(len(e))
-        test_case('readw_test', checker=checker, stdin=i)
+        fcount += test_case('readw_test', checker=checker, stdin=i)
+
+    return (tcount, fcount)
 
 def parseu_test():
+    tcount = 0
+    fcount = 0
+
     cases = [
         ('"0"', '0', 1),
         ('"1"', '1', 1),
@@ -276,17 +327,51 @@ def parseu_test():
     ]
 
     for (i, o, _) in cases:
+        tcount += 1
         checker = expect_stdout_to_be(o)
-        test_case('parseu_test', checker=checker, args=[i])
+        fcount += test_case('parseu_test', checker=checker, args=[i])
+
+    return (tcount, fcount)
+
+TEST_SUITES = {
+    'strlen': strlen_test,
+    'prints': prints_test,
+    'printn': printn_test,
+    'printc': printc_test,
+    'printu': printu_test,
+    'printi': printi_test,
+    'readc': readc_test,
+    'readw': readw_test,
+    'parseu': parseu_test
+}
+
+def print_summary(summary):
+    (total_count, failure_count) = summary
+
+    s1 = '{} tests, '.format(total_count)
+    s2 = '{} failures'.format(failure_count)
+
+    print('-' * len(s1 + s2))
+
+    s1 = colored(s1, 'green')
+    s2 = colored(s2, 'red' if failure_count else 'green')
+    print(s1 + s2)
 
 if __name__ == '__main__':
     setup()
-    strlen_test()
-    prints_test()
-    printn_test()
-    printc_test()
-    printu_test()
-    printi_test()
-    readc_test()
-    readw_test()
-    parseu_test()
+
+    suites = []
+    argv = sys.argv
+
+    if len(argv) > 1:
+        suites = [TEST_SUITES.get(arg) for arg in argv]
+        suites = filter(lambda x : x is not None, suites)
+    else:
+        suites = TEST_SUITES.values()
+
+    suites = list(suites)
+    random.shuffle(suites)
+
+    summary = [t() for t in suites]
+    summary = reduce(lambda a,x : (a[0]+x[0], a[1]+x[1]), summary, (0, 0))
+    print_summary(summary)
