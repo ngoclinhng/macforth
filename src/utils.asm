@@ -296,6 +296,8 @@ readw:
 ;;              in rax and its digits count in rdx.
 ;;              Note that: the input string must starts with a digit
 ;;              (0 is fine).
+;;              Note that if your input string is something like '0123',
+;;              the integer in rax will be 123, and rdx will be 4. (FIXME)
 parseu:
     ; The final number will be stored
     ; in rax. rcx is used to keep track

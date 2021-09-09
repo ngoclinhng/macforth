@@ -308,8 +308,8 @@ def parseu_test():
         ('"123"', '123', 3),
         ('0x31,0x32,0x33', '123', 3),
 
-        ('"012"', '12', 2),
-        ('0x30,0x31,0x32', '12', 2),
+        ('"012"', '12', 3),
+        ('0x30,0x31,0x32', '12', 3),
         ('0x31,0x32,0x20,0x33', '12', 2),
 
         ('0x31,0x32,0x33,0x34,0x35,0x36,0x37,0x38,0x39', '123456789', 9),
@@ -329,6 +329,11 @@ def parseu_test():
     for (i, o, _) in cases:
         tcount += 1
         checker = expect_stdout_to_be(o)
+        fcount += test_case('parseu_test', checker=checker, args=[i])
+
+    for (i, _, s) in cases:
+        tcount += 1
+        checker = expect_status_to_be(s)
         fcount += test_case('parseu_test', checker=checker, args=[i])
 
     return (tcount, fcount)
