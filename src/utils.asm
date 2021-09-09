@@ -379,14 +379,48 @@ parseu:
 ;; ---------
 ;; rdi: a pointer to a null-terminated string. The input string must
 ;;      starts with an digit (0-9) or one of these characters ('+', '-')
-;;      followed by a digit.
+;;      immediately followed by a digit (spaces between aren't allowed).
 ;;
 ;; Description
 ;; -----------
 ;; Parses an 8-byte, signed integer from the start of the specified input
 ;; string, and returns the parsed number in rax; its digits count
-;; (plus 1 for the minus sign if any) in rdx. See parseu for more details.
+;; (plus 1 for the minus sign if any) in rdx.
+;;
+;; See parseu for more details.
 parsei:
+    ; Read first character
+    mov al, byte [rdi]
+
+    ; Is it '-'?
+    cmp al, '-'
+    jz .signed
+
+    ; Is it '+'?
+    cmp al, '+'
+    jz .unsigned
+
+    ; If the first character is neither
+    ; '+' nor '-', hand over to `parseu`.
+    jmp parseu
+
+.signed:
+    inc rdi
+    call parseu
+
+    test rdx, rdx
+    jz .error
+
+    neg rax
+    inc rdx
+    ret
+.unsigned:
+    ; we don't count the plus sign '+'.
+    inc rdi
+    jmp parseu
+
+.error:
+    xor rax, rax
     ret
 
 ;; exit(rdi) -> noreturn
