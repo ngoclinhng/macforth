@@ -21,13 +21,16 @@ global exit
 
 section .text
 
-;; Function: strlen(rdi) -> rax.
+;; strlen(rdi) -> rax.
 ;;
-;; Arguments:
-;;   rdi: a pointer to a null-terminated string.
+;; Arguments
+;; ---------
+;; rdi: a pointer to a null-terminated string.
 ;;
-;; Description: Takes as argument a pointer to a null-terminated string,
-;;              computes its length, and returns the result in rax.
+;; Description
+;; -----------
+;; Takes as argument a pointer to a null-terminated string, computes its
+;; length, and returns the result in rax.
 strlen:
     xor rax, rax
 .loop:
@@ -38,13 +41,16 @@ strlen:
 .end:
     ret
 
-;; Function: prints(rdi) -> stdout.
+;; prints(rdi) -> stdout.
 ;;
-;; Arguments:
-;;   rdi: a pointer to a null-terminated string.
+;; Arguments
+;; ---------
+;; rdi: a pointer to a null-terminated string.
 ;;
-;; Description: Takes as argument a pointer to a null-terminated string,
-;;              and outputs it to stdout.
+;; Description
+;; -----------
+;; Takes as argument a pointer to a null-terminated string, and outputs it
+;; to stdout.
 prints:
     push rdi
     call strlen
@@ -57,21 +63,32 @@ prints:
 
     ret
 
-;; Function: printn() -> stdout.
-;; Description: outputs newline character to stdout.
-;; Note that: this function doesn't actually do anything except write
-;; the newline character into rdi, which then gets passed into `printc`
-;; right below it.
+;; printn() -> stdout.
+;;
+;; Arguments
+;; ----------
+;; This function does not take any arguments.
+;;
+;; Description
+;; -----------
+;; Outputs newline character to stdout.
+;;
+;; Implementation notes
+;; --------------------
+;; This function doesn't actually do anything except write the newline
+;; character into rdi, which then gets passed into `printc` right below it.
 printn:
     mov rdi, 10
 
-;; Function: printc(rdi) -> stdout.
+;; printc(rdi) -> stdout.
 ;;
-;; Arguments:
-;;   rdi: single character code
+;; Arguments
+;; ---------
+;; rdi: single character code
 ;;
-;; Description: Takes as argument a single character code and outputs it
-;;              to stdout.
+;; Description
+;; -----------
+;; Takes as argument a single character code and outputs it to stdout.
 printc:
     ; FIXME: the following implementation implicitly assumes that the
     ; target machine is Little Endian, so that after pushing rdi on top
@@ -83,37 +100,39 @@ printc:
     pop rdi
     ret
 
-;; Function: printu(rdi) -> stdout.
+;; printu(rdi) -> stdout.
 ;;
-;; Arguments:
-;;   rdi: 8 bytes represents an unsigned integer.
+;; Arguments
+;; ---------
+;; rdi: 8 bytes represents an unsigned integer.
 ;;
-;; Description: Takes as input an unsigned integer and outputs it to stdout.
+;; Description
+;; -----------
+;; Takes as input an unsigned integer and outputs it to stdout.
 ;;
-;; How: Let's take a look at an application of `printu`:
+;; Implementation notes
+;; --------------------
+;; Let's take a look at an application of `printu`:
 ;;
-;;        mov rdi, 123
-;;        call printu
+;;   mov rdi, 123
+;;   call printu
 ;;
-;;      We would expect the string '123' to be printed to stdout. But how
-;;      are we about to convert 64 bits of 0s and 1s in rdi to the string
-;;      '123'?
+;; We would expect the string '123' to be printed to stdout. But how are
+;; we about to convert 64 bits of 0s and 1s in rdi to the string '123'?
 ;;
-;;      Perform unsgined division whatever shit in rdi by 10. The quotient
-;;      is the bit pattern for the unsigned integer 12, and the remainder
-;;      is the bit pattern for the unsgined integer 3. In general, the
-;;      remainder is the 4-bit pattern (all other leading bits are 0) for
-;;      one of the 10 digits (0-9), and by xoring it with 1 byte 0x30, we
-;;      will get the ASCII character representing that digit. Repeat this
-;;      procudure until the quotient is 0, we would get all the wanted
-;;      digits.
+;; Perform unsgined division whatever shit in rdi by 10. The quotient is
+;; the bit pattern for the unsigned integer 12, and the remainder is the
+;; bit pattern for the unsgined integer 3. In general, the remainder is the
+;; 4-bit pattern (all other leading bits are 0) for one of the 10 digits
+;; (0-9), and by xoring it with 1 byte 0x30, we will get the ASCII character
+;; representing that digit. Repeat this procudure until the quotient is 0,
+;; we would get all the wanted digits.
 ;;
-;;      We also need to store each byte generated (at each iteration) on
-;;      the stack. But how much memory (on the stack) should we allocate?
-;;      Well, the biggest 8-byte unsigned integer corresponding to all bits
-;;      are turned on in rdi, which is the number 2^64-1 = 1.844674407E19
-;;      (20 digits) in decimal format. So, we need to allocate at least 20
-;;      bytes on the stack.
+;; We also need to store each byte generated (at each iteration) on the
+;; stack. But how much memory (on the stack) should we allocate? Well, the
+;; biggest 8-byte unsigned integer corresponding to all bits are turned on
+;; in rdi, which is the number 2^64-1 = 1.844674407E19 (20 digits) in
+;; decimal format. So, we need to allocate at least 20 bytes on the stack.
 printu:
     mov rax, rdi                ; needed for DIV instruction
     mov rdi, rsp                ; at the end, rdi points to digits string
@@ -139,13 +158,15 @@ printu:
     add rsp, 24                 ; restore rsp
     ret
 
-;; Function: printi(rdi) -> stdout.
+;; printi(rdi) -> stdout.
 ;;
-;; Arguments:
-;;   rdi: 8-byte, signed integer
+;; Arguments
+;; ----------
+;; rdi: 8-byte, signed integer
 ;;
-;; Description: Takes as input 8-byte, signed integer, and outputs it
-;;              to stdout.
+;; Description
+;; -----------
+;; Takes as input 8-byte, signed integer, and outputs it to stdout.
 printi:
     test rdi, rdi
     jns printu
@@ -158,9 +179,16 @@ printi:
     neg rdi
     jmp printu
 
-;; Function: readc(stdin) -> rax.
-;; Description: Reads next character from stdin and stores in in rax. If
-;;              the end of input stream occurs, rax will hold zero instead.
+;; readc() -> rax.
+;;
+;; Arguments:
+;; ----------
+;; This function does not take any arguments.
+;;
+;; Description
+;; -----------
+;; Reads next character from stdin and stores in in rax. If the end of
+;; input stream occurs, rax will hold zero instead.
 readc:
     push 0
 
@@ -173,24 +201,24 @@ readc:
     pop rax
     ret
 
-;; Function: readw(rdi, rsi) -> (rax, rdx).
+;; readw(rdi, rsi) -> (rax, rdx).
 ;;
-;; Arguments:
-;;   rdi: the buffer's address.
-;;   rsi: the buffer's size.
+;; Arguments
+;; ---------
+;; rdi: the buffer's address.
+;; rsi: the buffer's size.
 ;;
-;; Description: Reads at most (size - 1) consecutive, non-whitespace
-;;              characters from stdin and stores the null-terminated
-;;              string into the buffer (whose address is stored in rdi).
-;;              When this function returns, rax will hold the buffer's
-;;              address (which is also the address of the null-terminated
-;;              string has just been read) and rdx will hold the string's
-;;              length.
-;;              If the word is too big for the specified buffer size, rax
-;;              will hold zero instead.
-;;              Note that: readw will skip all leading whitespaces until it
-;;              encounters a non-whitespace character or the end of input
-;;              stream.
+;; Description
+;; -----------
+;; Reads at most (size - 1) consecutive, non-whitespace characters from
+;; stdin and stores the null-terminated string into the buffer (whose
+;; address is stored in rdi). When this function returns, rax will hold
+;; the buffer's address (which is also the address of the null-terminated
+;; string has just been read) and rdx will hold the string's length.
+;; If the word is too big for the specified buffer size, rax will hold zero
+;; instead.
+;; Note that: readw will skip all leading whitespaces until it encounters a
+;; non-whitespace character or the end of input stream.
 readw:
     ; r14 will store the index into the
     ; buffer of next character, and r15
@@ -285,19 +313,20 @@ readw:
 
     ret
 
-;; Function: parseu(rdi) -> (rax, rdx).
+;; parseu(rdi) -> (rax, rdx).
 ;;
-;; Arguments:
-;;   rdi: a pointer to a null-terminated string (which supposed to be
-;;        representing an unsigned integer, like '123').
+;; Arguments
+;; ---------
+;; rdi: a pointer to a null-terminated string. The input string must starts
+;; with a digit character (0-9).
 ;;
-;; Description: Parses an unsigned (8-byte) integer from the start of the
-;;              given null-terminated string, and returns the parsed number
-;;              in rax and its digits count in rdx.
-;;              Note that: the input string must starts with a digit
-;;              (0 is fine).
-;;              Note that if your input string is something like '0123',
-;;              the integer in rax will be 123, and rdx will be 4. (FIXME)
+;; Description
+;; -----------
+;; Parses an unsigned (8-byte) integer from the start of the given
+;; null-terminated string, and returns the parsed number in rax and its
+;; digits count in rdx.
+;; Note that if your input string is something like '0123', the integer in
+;; rax will be 123, and rdx will be 4. (FIXME)
 parseu:
     ; The final number will be stored
     ; in rax. rcx is used to keep track
@@ -344,16 +373,32 @@ parseu:
     mov rdx, rcx
     ret
 
+;; parsei(rdi) -> (rax, rdx).
+;;
+;; Arguments
+;; ---------
+;; rdi: a pointer to a null-terminated string. The input string must
+;;      starts with an digit (0-9) or one of these characters ('+', '-')
+;;      followed by a digit.
+;;
+;; Description
+;; -----------
+;; Parses an 8-byte, signed integer from the start of the specified input
+;; string, and returns the parsed number in rax; its digits count
+;; (plus 1 for the minus sign if any) in rdx. See parseu for more details.
 parsei:
     ret
 
-;; Function: exit(rdi) ->
+;; exit(rdi) -> noreturn
 ;;
-;; Arguments:
-;;   rdi: the exit status code.
+;; Arguments
+;; ---------
+;; rdi: the exit status code.
 ;;
-;; Description: Terminates the current process with the given exit status
-;;              code (given in rdi).
+;; Description
+;; -----------
+;; Terminates the current process with the given exit status code
+;; (given in rdi).
 exit:
     mov rax, SYSCALL_EXIT
     syscall
