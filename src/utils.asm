@@ -11,6 +11,8 @@ global readc
 global readw
 global parseu
 global parsei
+global strequ
+global strcpy
 global exit
 
 ;; whitespace characters: space, newline, carriage return, horizontal tab
@@ -421,6 +423,43 @@ parsei:
 
 .error:
     xor rax, rax
+    ret
+
+;; strequ(rdi, rsi) -> rax (either 0 or 1).
+;;
+;; Arguments
+;; ---------
+;; rdi: a pointer to a null-terminated string.
+;; rsi: a pointer to a null-terminated string.
+;;
+;; Description
+;; -----------
+;; Takes as inputs two pointers to two null-terminated strings, compares
+;; them (character by character), and returns 1 if they are equal,
+;; otherwise returns 0.
+;;
+;; Two null-terminated strings are considered equal if and only if they
+;; are of the same length (having exactly the same number of characters),
+;; and the corresponding characters are identical.
+strequ:
+    ret
+
+;; strcpy(rdi, rsi, rdx) -> rax.
+;;
+;; Arguments
+;; ---------
+;; rdi: a pointer to a null-terminated string.
+;; rsi: buffer address.
+;; rdx: buffer size.
+;;
+;; Description
+;; -----------
+;; Takes as inputs a pointer to a null-terminated string, a buffer address,
+;; and a buffer size, copies the string into the buffer, and returns the
+;; buffer address in rax.
+;; If the given string is too long for the specified buffer, 0 is returned
+;; instead.
+strcpy:
     ret
 
 ;; exit(rdi) -> noreturn
