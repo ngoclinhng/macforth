@@ -442,6 +442,29 @@ parsei:
 ;; are of the same length (having exactly the same number of characters),
 ;; and the corresponding characters are identical.
 strequ:
+    ; Compare next two characters, and
+    ; if they're not equal, go to .no
+    mov al, byte [rdi]
+    cmp al, byte [rsi]
+    jne .no
+
+    ; They are both equal to null-terminator,
+    ; go to .yes
+    test al, al
+    jz .yes
+
+    ; Otherwise, advance two pointers
+    ; and loop back.
+    inc rdi
+    inc rsi
+    jmp strequ
+
+.yes:
+    mov rax, 1
+    ret
+
+.no:
+    xor rax, rax
     ret
 
 ;; strcpy(rdi, rsi, rdx) -> rax.

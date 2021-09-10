@@ -450,13 +450,23 @@ def strequ_test():
     fcount = 0
 
     cases = [
-        ('""', '""')
+        ('', ''),
+        ('a', 'a'),
+        ('1', '1'),
+        ('abc', 'abc'),
+        ('123', '123'),
+        ('Hello, world!', 'Hello, world!'),
+        ('Hello, world!', 'Hello, world'),
+        ('Foo and Bar', 'Foo and Bar'),
+        ('Foo and bar', 'Foo and Bar'),
+        ('something', '')
     ]
 
     for (s1, s2) in cases:
         tcount += 1
         checker = expect_status_to_be(1 if s1 == s2 else 0)
-        fcount += test_case('strequ_test', args=[s1,s2], checker=checker)
+        args = [repr(s1), repr(s2)]
+        fcount += test_case('strequ_test', args=args, checker=checker)
 
     return (tcount, fcount)
 
