@@ -483,6 +483,7 @@ strequ:
 ;; If the given string is too long for the specified buffer, 0 is returned
 ;; instead.
 strcpy:
+    xor rax, rax
     ret
 
 ;; exit(rdi) -> noreturn

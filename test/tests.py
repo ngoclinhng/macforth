@@ -470,6 +470,24 @@ def strequ_test():
 
     return (tcount, fcount)
 
+def strcpy_test():
+    tcount = 0
+    fcount = 0
+
+    cases = []
+
+    for (i, o, _) in cases:
+        tcount += 1
+        checker = expect_stdout_to_be(o)
+        fcount += test_case('strcpy_test', args=[repr(i)], checker=checker)
+
+    for (i, _, s) in cases:
+        tcount += 1
+        checker = expect_status_to_be(s)
+        fcount += test_case('strcpy_test', args=[repr(i)], checker=checker)
+
+    return (tcount, fcount)
+
 TEST_SUITES = {
     'strlen': strlen_test,
     'prints': prints_test,
@@ -481,7 +499,8 @@ TEST_SUITES = {
     'readw': readw_test,
     'parseu': parseu_test,
     'parsei': parsei_test,
-    'strequ': strequ_test
+    'strequ': strequ_test,
+    'strcpy': strcpy_test
 }
 
 def print_summary(summary):
