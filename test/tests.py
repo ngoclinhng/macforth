@@ -474,7 +474,25 @@ def strcpy_test():
     tcount = 0
     fcount = 0
 
-    cases = []
+    cases = [
+        ('', '', 1),
+        (' ', ' ', 1),
+        ('a', 'a', 1),
+        ('ab', 'ab', 1),
+        ('abc', 'abc', 1),
+        ('a b c', 'a b c', 1),
+        ('Hi', 'Hi', 1),
+        ('bye bye', 'bye bye', 1),
+        ('Hello', 'Hello', 1),
+        ('1234567', '1234567', 1),
+        ('abcdefg', 'abcdefg', 1),
+        ('1+1=3', '1+1=3', 1),
+
+        # Overflow tests (buffer size is 8 bytes. See strcpy_test.asm)
+        ('12345678', '', 0),
+        ('abcdefgh', '', 0),
+        ('Hello, world!', '', 0)
+    ]
 
     for (i, o, _) in cases:
         tcount += 1

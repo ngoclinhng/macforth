@@ -483,7 +483,39 @@ strequ:
 ;; If the given string is too long for the specified buffer, 0 is returned
 ;; instead.
 strcpy:
+    ; rcx will hold the index into the
+    ; buffer of the next character, rdx
+    ; is the maximum number of characters
+    ; allowed (exclude null-terminator).
+    xor rcx, rcx
+    dec rdx
+
+.loop:
+    ; Read next character from the source string,
+    ; and if it is a null-terminator, go to .end
+    mov al, byte [rdi + rcx]
+    test al, al
+    jz .end
+
+    ; Maximum number of characters has been reached,
+    ; but next character is not a null-terminator,
+    ; go to .error
+    cmp rcx, rdx
+    je .error
+
+    ; Otherwise, write next character into the
+    ; destination, advance index, and loop back.
+    mov [rsi + rcx], al
+    inc rcx
+    jmp .loop
+
+.error:
     xor rax, rax
+    ret
+
+.end:
+    mov byte [rsi + rcx], 0
+    mov rax, rsi
     ret
 
 ;; exit(rdi) -> noreturn
