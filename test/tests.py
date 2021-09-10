@@ -445,6 +445,21 @@ def parsei_test():
 
     return (tcount, fcount)
 
+def strequ_test():
+    tcount = 0
+    fcount = 0
+
+    cases = [
+        ('""', '""')
+    ]
+
+    for (s1, s2) in cases:
+        tcount += 1
+        checker = expect_status_to_be(1 if s1 == s2 else 0)
+        fcount += test_case('strequ_test', args=[s1,s2], checker=checker)
+
+    return (tcount, fcount)
+
 TEST_SUITES = {
     'strlen': strlen_test,
     'prints': prints_test,
@@ -455,7 +470,8 @@ TEST_SUITES = {
     'readc': readc_test,
     'readw': readw_test,
     'parseu': parseu_test,
-    'parsei': parsei_test
+    'parsei': parsei_test,
+    'strequ': strequ_test
 }
 
 def print_summary(summary):
