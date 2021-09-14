@@ -1,3 +1,11 @@
 test/obj
 test/bin
 test/__pycache__
+
+test/utils/obj
+test/utils/bin
+test/utils/__pycache__
+
+test/words/obj
+test/words/bin
+test/words/__pycache__
