@@ -36,7 +36,21 @@ last_word_ptr: dq _last_word
 user_dict_ptr: dq user_dict
 user_memm_ptr: dq user_memm
 
-section .rodata
-no_such_word_msg: db ": no such word", 10, 0
+;; Stores the data stack base. It is used by the word `.s` to display the
+;; content of the stack.
+;;                    .
+;;                    .
+;;                    .
+;; stack_base --> +--------+
+;;                |   1    |
+;;                +--------+
+;;                |   2    |
+;;                +--------+
+;;                |   3    |
+;;  rsp --------> +--------+
+;;                    .
+;;                    .
+;;                    .
+stack_base: dq 0
 
 %endif                          ; MACFORTH_MEM_INC_
