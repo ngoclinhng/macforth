@@ -142,7 +142,6 @@
     push rax
 %endmacro
 
-%macro rip_rel 1
-    [rel %1]
-%endmacro
+%define RIP_REL(a) [rel a]
+
 %endif                          ; MACFORTH_MACROS_INC_
