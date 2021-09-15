@@ -39,7 +39,13 @@ def setup():
 # TEST SUITES.
 #
 
+def init_test():
+    checker = expect_stdout_to_be('OK')
+    fcount = test_case('init_test', args=[], checker=checker)
+    return (1, fcount)
+
 TEST_SUITES = {
+    'init': init_test
 }
 
 def print_summary(summary):
