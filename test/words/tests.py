@@ -110,7 +110,8 @@ def word_test():
 
 
         ('thing', 'thing'),
-        ('thing foo bar ;', 'thing')
+        ('thing foo bar ;', 'thing'),
+        ('', '')
     ]
 
     for (i, o) in cases:
@@ -121,12 +122,18 @@ def word_test():
     return (tcount, fcount)
 
 
+def dup_test():
+    checker = expect_stdout_to_be('OK')
+    fcount = test_case('dup_test', checker=checker)
+    return (1, fcount)
+
 TEST_SUITES = {
     'init': init_test,
     'next': next_test,
     'find': find_test,
     'ibuf': ibuf_test,
-    'word': word_test
+    'word': word_test,
+    'dup': dup_test
 }
 
 def print_summary(summary):

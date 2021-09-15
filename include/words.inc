@@ -1,3 +1,18 @@
+;; ( a -- a a)
+;; Duplicates the TOS (top-of-stack) into NOS (next-on-stack).
+;; Sample image of the Paramater Strack before and after `dup`:
+;;
+;;   cell#  | initial |  dup
+;;   -------------------------
+;;     0    |   -16   |  -16              (TOS)
+;;     1    |    73   |  -16              (NOS)
+;;     2    |     5   |   73
+;;     3    |         |    5
+;;     4    |         |
+native "dup", dup
+    push qword [rsp]
+    jmp next
+
 ;; ( input_buffer_addr -- length )
 ;; Reads a word from stdin (skip leading spaces) into the buffer starting at
 ;; the address `input_buffer_addr`. Word's length will be pushed onto the
