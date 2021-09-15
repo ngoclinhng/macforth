@@ -44,8 +44,15 @@ def init_test():
     fcount = test_case('init_test', args=[], checker=checker)
     return (1, fcount)
 
+
+def next_test():
+    checker = expect_status_to_be(0)
+    fcount = test_case('next_test', args=[], checker=checker)
+    return (1, fcount)
+
 TEST_SUITES = {
-    'init': init_test
+    'init': init_test,
+    'next': next_test
 }
 
 def print_summary(summary):
