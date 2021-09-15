@@ -1,3 +1,15 @@
+;; ( input_buffer_addr -- length )
+;; Reads a word from stdin (skip leading spaces) into the buffer starting at
+;; the address `input_buffer_addr`. Word's length will be pushed onto the
+;; Paramater Stack.
+;; TODO: What if readw failed?
+native "word", word
+    pop rdi
+    mov rsi, INPUT_BUFFER_SIZE
+    call readw
+    push rdx
+    jmp next
+
 ;; ( addr -- header_field_add | 0 )
 ;; Takes as input an address of a null-terminated string (`addr`) and returns
 ;; the address of the Header Field of the word in the word in the dictionary

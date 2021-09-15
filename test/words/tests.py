@@ -80,11 +80,53 @@ def ibuf_test():
     fcount = test_case('ibuf_test', args=[], checker=checker)
     return (1, fcount)
 
+def word_test():
+    tcount = 0
+    fcount = 0
+
+    cases = [
+        (':', ':'),
+        (' :', ':'),
+        (': thing', ':'),
+
+        (';', ';'),
+        (' ;', ';'),
+        (' ;\n', ';'),
+
+        ('.', '.'),
+        (',', ','),
+        ('."', '."'),
+
+        ('+', '+'),
+        (' + ', '+'),
+        ('*', '*'),
+        (' * ', '*'),
+        ('+*', '+*'),
+        (' +* ', '+*'),
+
+        ('1 2 +', '1'),
+        ('23 45 *', '23'),
+        ('-13 60 -', '-13'),
+
+
+        ('thing', 'thing'),
+        ('thing foo bar ;', 'thing')
+    ]
+
+    for (i, o) in cases:
+        tcount += 1
+        checker = expect_stdout_to_be(o)
+        fcount += test_case('word_test', checker=checker, stdin=i)
+
+    return (tcount, fcount)
+
+
 TEST_SUITES = {
     'init': init_test,
     'next': next_test,
     'find': find_test,
-    'ibuf': ibuf_test
+    'ibuf': ibuf_test,
+    'word': word_test
 }
 
 def print_summary(summary):
