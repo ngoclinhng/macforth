@@ -23,6 +23,9 @@ rstack_start: resq 1
 ;; Changes to 1 if compiling, 0 by default.
 state_ptr: resq 1
 
+;; Input Buffer: buffer to read textual words into
+input_buffer: resb INPUT_BUFFER_SIZE
+
 section .data
 
 last_word_ptr: dq _last_word

@@ -39,6 +39,12 @@ native "find", find
     mov [rsp], rsi
     jmp next
 
+;; ( -- input_buffer_addr )
+;; Pushes the address of the input buffer onto the Paramater Stack.
+native "ibuf", ibuf
+    push_addr input_buffer
+    jmp next
+
 ;; Initialization.
 native "init", init
     mov qword RIP_REL(state_ptr), 0

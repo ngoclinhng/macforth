@@ -75,10 +75,16 @@ def find_test():
 
     return (tcount, fcount)
 
+def ibuf_test():
+    checker = expect_stdout_to_be('OK')
+    fcount = test_case('ibuf_test', args=[], checker=checker)
+    return (1, fcount)
+
 TEST_SUITES = {
     'init': init_test,
     'next': next_test,
-    'find': find_test
+    'find': find_test,
+    'ibuf': ibuf_test
 }
 
 def print_summary(summary):
