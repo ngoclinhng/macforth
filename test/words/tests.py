@@ -50,9 +50,35 @@ def next_test():
     fcount = test_case('next_test', args=[], checker=checker)
     return (1, fcount)
 
+def find_test():
+    tcount = 0
+    fcount = 0
+
+    cases = [
+        ('foo', 'foo', 'found'),
+        ('bar', 'bar', 'found'),
+        ('baz', 'baz', 'found'),
+        ('push-string-addr', 'push_string_addr', 'found'),
+        ('check-find', 'check_find', 'found'),
+        ('terminate', 'terminate', 'found'),
+        ('init', 'init', 'found'),
+        ('find', 'find', 'found'),
+
+        ('thing', None, 'not_found')
+    ]
+
+    for (s, c, o) in cases:
+        tcount += 1
+        checker = expect_stdout_to_be(o)
+        args = [repr(s)] if not c else [repr(s), c]
+        fcount += test_case('find_test', args=args, checker=checker)
+
+    return (tcount, fcount)
+
 TEST_SUITES = {
     'init': init_test,
-    'next': next_test
+    'next': next_test,
+    'find': find_test
 }
 
 def print_summary(summary):
