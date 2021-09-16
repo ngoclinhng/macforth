@@ -127,13 +127,36 @@ def dup_test():
     fcount = test_case('dup_test', checker=checker)
     return (1, fcount)
 
+def rot_test():
+    tcount = 0
+    fcount = 0
+
+    cases = [
+        # ( 1 2 3 -- 2 3 1)
+        ([1, 2, 3], '1 3 2'),
+
+        # ( 5 73 -16 -- 73 -16 5 )
+        ([5, 73, -16], '5 -16 73'),
+
+        # ( 3 2 1 -- 2 1 3 )
+        ([3, 2, 1], '3 1 2')
+    ]
+
+    for (args, out) in cases:
+        tcount += 1
+        checker = expect_stdout_to_be(out)
+        fcount += test_case('rot_test', checker=checker, args=args)
+
+    return (tcount, fcount)
+
 TEST_SUITES = {
     'init': init_test,
     'next': next_test,
     'find': find_test,
     'ibuf': ibuf_test,
     'word': word_test,
-    'dup': dup_test
+    'dup': dup_test,
+    'rot': rot_test
 }
 
 def print_summary(summary):

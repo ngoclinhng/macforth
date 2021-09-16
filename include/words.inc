@@ -13,6 +13,26 @@ native "dup", dup
     push qword [rsp]
     jmp next
 
+;; ( a b c -- b c a)
+;; Rotates the top 3 numbers.
+;; Sample image of the Paramater Stack before and after `rot`:
+;;
+;;   cell#  | initial |  rot
+;;   -------------------------
+;;     0    |   -16   |    5              (TOS)
+;;     1    |    73   |  -16              (NOS)
+;;     2    |     5   |   73
+;;     3    |     2   |    2
+;;     4    |         |
+native "rot", rot
+    pop rcx
+    pop rdx
+    pop rax
+    push rdx
+    push rcx
+    push rax
+    jmp next
+
 ;; ( input_buffer_addr -- length )
 ;; Reads a word from stdin (skip leading spaces) into the buffer starting at
 ;; the address `input_buffer_addr`. Word's length will be pushed onto the
