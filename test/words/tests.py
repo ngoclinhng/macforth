@@ -149,6 +149,26 @@ def rot_test():
 
     return (tcount, fcount)
 
+def cfa_test():
+    tcount = 0
+    fcount = 0
+
+    cases = [
+        ('cfa', 'cfa', 'OK'),
+        ('init', 'init', 'OK'),
+        ('find', 'find', 'OK'),
+        ('dup', 'dup', 'OK'),
+        ('thing', None, 'No such word was found')
+    ]
+
+    for (s, c, o) in cases:
+        tcount += 1
+        checker = expect_stdout_to_be(o)
+        args = [repr(s), c] if c else [repr(s)]
+        fcount += test_case('cfa_test', checker=checker, args=args)
+
+    return (tcount, fcount)
+
 TEST_SUITES = {
     'init': init_test,
     'next': next_test,
@@ -156,7 +176,8 @@ TEST_SUITES = {
     'ibuf': ibuf_test,
     'word': word_test,
     'dup': dup_test,
-    'rot': rot_test
+    'rot': rot_test,
+    'cfa': cfa_test
 }
 
 def print_summary(summary):

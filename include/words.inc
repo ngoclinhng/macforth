@@ -45,7 +45,7 @@ native "word", word
     push rdx
     jmp next
 
-;; ( addr -- header_field_add | 0 )
+;; ( addr -- header_field_addr | 0 )
 ;; Takes as input an address of a null-terminated string (`addr`) and returns
 ;; the address of the Header Field of the word in the word in the dictionary
 ;; whose name matches the given string. If no such word was found, 0 is
@@ -84,6 +84,23 @@ native "find", find
     jmp next
 .found:
     mov [rsp], rsi
+    jmp next
+
+;; ( header_field_addr -- code_field_addr )
+;; Converts a word's Header Field Address to its Code Field Address
+;; Consult `macros.inc` for the structure of a word.
+native "cfa", cfa
+    pop rsi
+    add rsi, NAME_FIELD_OFFSET
+.loop:
+    mov al, [rsi]
+    test al, al
+    jz .end
+    inc rsi
+    jmp .loop
+.end:
+    add rsi, 2                  ; 1 for null-terminator + 1 for flags
+    push rsi
     jmp next
 
 ;; ( -- input_buffer_addr )
