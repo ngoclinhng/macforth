@@ -103,6 +103,12 @@ native "cfa", cfa
     push rsi
     jmp next
 
+;; ( code_field_addr -- )
+;; Executes the word whose Code Field Address is TOS.
+native "exe", exe
+    pop w
+    jmp [w]
+
 ;; ( -- input_buffer_addr )
 ;; Pushes the address of the input buffer onto the Paramater Stack.
 native "ibuf", ibuf
