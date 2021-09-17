@@ -125,6 +125,13 @@ native "lit", lit
     add pc, 8
     jmp next
 
+;; ( addr -- )
+;; Prints a null-terminated string whose address if TOS.
+native "prints", prints
+    pop rdi
+    call prints
+    jmp next
+
 ;; ( code_field_addr -- )
 ;; Executes the word whose Code Field Address is TOS.
 native "exe", exe
@@ -188,12 +195,26 @@ native "bye", bye
     xor rdi, rdi
     jmp exit
 
-;; Common implementation of all colon words.
+;; Enters a colon word.
 native "docolon", docolon
     rpush pc
     add w, 8
     mov pc, w
     jmp next
+
+;; Exits a colon word.
+native "exit", exit
+    rpop pc
+    jmp next
+
+;; ( addr -- )
+;; Prints undefined error message to stdout assuming that the address of
+;; the null-terminated string representing the (undefined) word's name is
+;; TOS.
+; colon "print-undef-error", print_undef_error
+;     dq code_field_addr(lit)
+;     dq undefined_word_error
+;     dq code_field_addr(prints)
 
 ;; Since each test case will define its own interpreter.
 ;; TODO: this is just placeholder for now.

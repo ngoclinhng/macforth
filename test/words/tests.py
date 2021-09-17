@@ -226,6 +226,22 @@ def lit_test():
 
     return (tcount, fcount)
 
+def prints_test():
+    tcount = 0
+    fcount = 0
+
+    inputs = [
+        ':', ';', '.', '+', '-', '/', ',', '.s', '.S', 'foo bar baz',
+        'Error: THING is undefined'
+    ]
+
+    for s in inputs:
+        tcount += 1
+        checker = expect_stdout_to_be(s)
+        fcount += test_case('prints_test', checker=checker, args=[repr(s)])
+
+    return (tcount, fcount)
+
 TEST_SUITES = {
     'init': init_test,
     'next': next_test,
@@ -236,6 +252,7 @@ TEST_SUITES = {
     'rot': rot_test,
     'drop': drop_test,
     'lit': lit_test,
+    'prints': prints_test,
     'cfa': cfa_test,
     'gotz': gotz_test,
     'docolon': docolon_test
