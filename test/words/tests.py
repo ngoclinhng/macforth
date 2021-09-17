@@ -242,6 +242,37 @@ def prints_test():
 
     return (tcount, fcount)
 
+def printe_test():
+    (tcount, fcount) = (0, 0)
+
+    cases = [
+        ('foo', 1),
+        ('FOO', 11),
+        ('bar', 17),
+        ('BAR', 2),
+        ('thing', 20),
+        ('Thing', 10),
+        ('THING', 3),
+        ('THIng', 4),
+        ('TING', 15),
+        ('TONG', 25)
+    ]
+
+    for (string, status) in cases:
+        tcount += 1
+        expected = 'Error: {} is undefined'.format(string)
+        checker = expect_stdout_to_be(expected)
+        args = [repr(string), status]
+        fcount += test_case('printe_test', checker=checker, args=args)
+
+    for (string, status) in cases:
+        tcount += 1
+        checker = expect_status_to_be(status)
+        args = [repr(string), status]
+        fcount += test_case('printe_test', checker=checker, args=args)
+
+    return (tcount, fcount)
+
 TEST_SUITES = {
     'init': init_test,
     'next': next_test,
@@ -253,6 +284,7 @@ TEST_SUITES = {
     'drop': drop_test,
     'lit': lit_test,
     'prints': prints_test,
+    'printe': printe_test,
     'cfa': cfa_test,
     'gotz': gotz_test,
     'docolon': docolon_test

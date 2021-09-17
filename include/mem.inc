@@ -47,4 +47,11 @@ last_word_ptr: dq _last_word
 ;;                    .
 stack_base: dq 0
 
+section .rodata
+
+;; The structure if an error message when we encounter that some word is
+;; undefined is like this: "Error: THING is undefined".
+undefined_word_error: db "Error: ", 0
+undefined_word_undef: db " is undefined", 0
+
 %endif                          ; MACFORTH_MEM_INC_

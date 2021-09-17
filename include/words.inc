@@ -208,13 +208,25 @@ native "exit", exit
     jmp next
 
 ;; ( addr -- )
-;; Prints undefined error message to stdout assuming that the address of
+;; Prints undefined error message to stdout, assuming that the address of
 ;; the null-terminated string representing the (undefined) word's name is
 ;; TOS.
-; colon "print-undef-error", print_undef_error
-;     dq code_field_addr(lit)
-;     dq undefined_word_error
-;     dq code_field_addr(prints)
+colon "printe", printe
+    ; Prints "Error: "
+    dq code_field_addr(lit)
+    dq undefined_word_error
+    dq code_field_addr(prints)
+
+    ; Prints word's name
+    dq code_field_addr(prints)
+
+    ; Prints " is undefined"
+    dq code_field_addr(lit)
+    dq undefined_word_undef
+    dq code_field_addr(prints)
+
+    ; Exits COLON word
+    dq code_field_addr(exit)
 
 ;; Since each test case will define its own interpreter.
 ;; TODO: this is just placeholder for now.
