@@ -187,6 +187,22 @@ def gotz_test():
 
     return (tcount, fcount)
 
+def drop_test():
+    tcount = 0
+    fcount = 0
+
+    cases = [
+        ([2, 5, 73, -16], '73 5 2'),
+        ([1, 2, 3, 4], '3 2 1')
+    ]
+
+    for (args, o) in cases:
+        tcount += 1
+        checker = expect_stdout_to_be(o)
+        fcount += test_case('drop_test', checker=checker, args=args)
+
+    return (tcount, fcount)
+
 TEST_SUITES = {
     'init': init_test,
     'next': next_test,
@@ -195,6 +211,7 @@ TEST_SUITES = {
     'word': word_test,
     'dup': dup_test,
     'rot': rot_test,
+    'drop': drop_test,
     'cfa': cfa_test,
     'gotz': gotz_test
 }

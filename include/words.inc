@@ -1,3 +1,17 @@
+;; ( a -- )
+;; Drop the TOS.
+;;
+;;   cell#  | initial |  drop
+;;   -------------------------
+;;     0    |   -16   |   73              (TOS)
+;;     1    |    73   |    5              (NOS)
+;;     2    |     5   |    2
+;;     3    |     2   |
+;;     4    |         |
+native "drop", drop
+    add rsp, 8
+    jmp next
+
 ;; ( a -- a a)
 ;; Duplicates the TOS (top-of-stack) into NOS (next-on-stack).
 ;; Sample image of the Paramater Strack before and after `dup`:
