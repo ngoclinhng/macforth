@@ -169,6 +169,24 @@ def cfa_test():
 
     return (tcount, fcount)
 
+def gotz_test():
+    tcount = 0
+    fcount = 0
+
+    cases = [
+        (0, 'ISZERO'),
+        (1, 'NOZERO'),
+        (-1, 'NOZERO'),
+        (123, 'NOZERO')
+    ]
+
+    for (i, o) in cases:
+        tcount += 1
+        checker = expect_stdout_to_be(o)
+        fcount += test_case('gotz_test', checker=checker, args=[i])
+
+    return (tcount, fcount)
+
 TEST_SUITES = {
     'init': init_test,
     'next': next_test,
@@ -177,7 +195,8 @@ TEST_SUITES = {
     'word': word_test,
     'dup': dup_test,
     'rot': rot_test,
-    'cfa': cfa_test
+    'cfa': cfa_test,
+    'gotz': gotz_test
 }
 
 def print_summary(summary):

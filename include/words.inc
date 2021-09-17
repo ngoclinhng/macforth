@@ -109,6 +109,37 @@ native "exe", exe
     pop w
     jmp [w]
 
+;; ( tos -- )
+;; Goto some label if TOS is zero.
+;;
+;;                     .                 .
+;;                     .                 .
+;;                     .                 .
+;;                     +-----------------+
+;;                     |       CFA       | (gotz)
+;;       pc ---------> +-----------------+
+;;                     | zero_tos_branch |
+;;                     +-----------------+
+;;                     .                 .
+;;                     .                 .
+;;                     .                 .
+;; zero_tos_branch --> +-----------------+
+;;                     |       CFA       |
+;;                     +-----------------+
+;;                     |       CFA       |
+;;                     +-----------------+
+;;                     |                 |
+;;
+native "gotz", gotz
+    pop rax
+    test rax, rax
+    jnz .skip
+    mov pc, [pc]
+    jmp next
+.skip:
+    add pc, 8
+    jmp next
+
 ;; ( -- input_buffer_addr )
 ;; Pushes the address of the input buffer onto the Paramater Stack.
 native "ibuf", ibuf

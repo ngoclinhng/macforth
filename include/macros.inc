@@ -144,4 +144,45 @@
 
 %define RIP_REL(a) [rel a]
 
+;; Go to some label if TOS is zero.
+;; Let's say in the middle of executing some word we encounter
+;; `gotz .zero_tos_branch`:
+;;
+;;                     .                 .
+;;                     .                 .
+;;                     .                 .
+;;                     +-----------------+
+;;                     |       CFA       | (gotz)
+;;       pc ---------> +-----------------+
+;;                     | zero_tos_branch |
+;;                     +-----------------+
+;;                     .                 .
+;;                     .                 .
+;;                     .                 .
+;; zero_tos_branch --> +-----------------+
+;;                     |       CFA       |
+;;                     +-----------------+
+;;                     |       CFA       |
+;;                     +-----------------+
+;;                     |                 |
+;;
+;; By it very nature, `next` will increment pc by 8 and set w to the CFA
+;; (Code Field Address, a.k.a execution token) of the word `gotz`, and jmp
+;; to the Code Address of this word. Keep in mind that, at this every
+;; moment, pc is NOT pointing to another CFA, but rather, it is pointing
+;; to `zero_tos_branch`, i.e, the cell (8 bytes) whose address is stored
+;; in pc contains the address of the CFA of the first word in the zero-TOS
+;; branch. The pseudocode if the word `gotz` would look something like this:
+;;
+;;   if TOS is zero:
+;;     mov pc, [pc]       ; set pc to `zero_tos_branch`
+;;     jmp next
+;;   else:
+;;     add pc, 8          ; skip `zero_tos_branch`
+;;     jmp next
+%macro gotz 1
+    dq code_field_addr(gotz)
+    dq %1
+%endmacro
+
 %endif                          ; MACFORTH_MACROS_INC_
