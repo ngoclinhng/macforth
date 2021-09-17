@@ -117,6 +117,14 @@ native "cfa", cfa
     push rsi
     jmp next
 
+;; ( -- a).
+;; Pushes the content of the cell (8 - bytes) immediately followed this
+;; word onto the Paramater Stack. (lit stands for literal).
+native "lit", lit
+    push qword [pc]
+    add pc, 8
+    jmp next
+
 ;; ( code_field_addr -- )
 ;; Executes the word whose Code Field Address is TOS.
 native "exe", exe
@@ -174,6 +182,11 @@ native "init", init
 .first:
     mov RIP_REL(stack_base), rsp
     jmp next
+
+;; Terminates Macforth
+native "bye", bye
+    xor rdi, rdi
+    jmp exit
 
 ;; Common implementation of all colon words.
 native "docolon", docolon

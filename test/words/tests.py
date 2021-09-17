@@ -208,6 +208,24 @@ def docolon_test():
     fcount = test_case('docolon_test', checker=checker)
     return (1, fcount)
 
+def lit_test():
+    tcount = 0
+    fcount = 0
+
+    cases = [
+        ('Hello', 1, 'Hello 1'),
+        ('Hi', 123, 'Hi 123'),
+        ('Hello, world!', -72, 'Hello, world! -72')
+    ]
+
+    for (s, n, o) in cases:
+        tcount += 1
+        checker = expect_stdout_to_be(o)
+        args = [repr(s), n]
+        fcount += test_case('lit_test', checker=checker, args=args)
+
+    return (tcount, fcount)
+
 TEST_SUITES = {
     'init': init_test,
     'next': next_test,
@@ -217,6 +235,7 @@ TEST_SUITES = {
     'dup': dup_test,
     'rot': rot_test,
     'drop': drop_test,
+    'lit': lit_test,
     'cfa': cfa_test,
     'gotz': gotz_test,
     'docolon': docolon_test
