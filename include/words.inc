@@ -175,6 +175,13 @@ native "init", init
     mov RIP_REL(stack_base), rsp
     jmp next
 
+;; Common implementation of all colon words.
+native "docolon", docolon
+    rpush pc
+    add w, 8
+    mov pc, w
+    jmp next
+
 ;; Since each test case will define its own interpreter.
 ;; TODO: this is just placeholder for now.
 %ifndef TEST

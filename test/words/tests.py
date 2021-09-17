@@ -203,6 +203,11 @@ def drop_test():
 
     return (tcount, fcount)
 
+def docolon_test():
+    checker = expect_stdout_to_be('colon: foo bar. Bye')
+    fcount = test_case('docolon_test', checker=checker)
+    return (1, fcount)
+
 TEST_SUITES = {
     'init': init_test,
     'next': next_test,
@@ -213,7 +218,8 @@ TEST_SUITES = {
     'rot': rot_test,
     'drop': drop_test,
     'cfa': cfa_test,
-    'gotz': gotz_test
+    'gotz': gotz_test,
+    'docolon': docolon_test
 }
 
 def print_summary(summary):
