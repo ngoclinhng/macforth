@@ -150,6 +150,13 @@ native "printn", printn
     call printn
     jmp next
 
+;; ( a -- )
+;; Removes TOS from the Paramater Stack and displays it on stdout.
+native ".", dot
+    pop rdi
+    call printi
+    jmp next
+
 ;; ( code_field_addr -- )
 ;; Executes the word whose Code Field Address is TOS.
 native "execute", execute

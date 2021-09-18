@@ -299,6 +299,24 @@ def execute_test():
 
     return (tcount, fcount)
 
+def dot_test():
+    (tcount, fcount) = (0, 0)
+
+    cases = [
+        ([1, 2, 3], '3 2 1'),
+        ([11, -2, 128], '128 -2 11'),
+        ([10, 10, 10], '10 10 10'),
+        ([-1, -1, -1], '-1 -1 -1'),
+        ([343, 545, -23123], '-23123 545 343')
+    ]
+
+    for (args, o) in cases:
+        tcount += 1
+        checker = expect_stdout_to_be(o)
+        fcount += test_case('dot_test', checker=checker, args=args)
+
+    return (tcount, fcount)
+
 TEST_SUITES = {
     'init': init_test,
     'next': next_test,
@@ -314,7 +332,8 @@ TEST_SUITES = {
     'cfa': cfa_test,
     'gotz': gotz_test,
     'docolon': docolon_test,
-    'execute': execute_test
+    'execute': execute_test,
+    'dot': dot_test
 }
 
 def print_summary(summary):
