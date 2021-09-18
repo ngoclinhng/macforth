@@ -273,6 +273,32 @@ def printe_test():
 
     return (tcount, fcount)
 
+def execute_test():
+    (tcount, fcount) = (0, 0)
+
+    cases = [
+        ('Hi', 1),
+        ('Hello', 2),
+        ('foo', 3),
+        ('bar', 4),
+        ('baz', 5),
+        ('Hi, there!', 15)
+    ]
+
+    for (string, status) in cases:
+        tcount += 1
+        checker = expect_stdout_to_be(string)
+        args = [repr(string), status]
+        fcount += test_case('execute_test', checker=checker, args=args)
+
+    for (string, status) in cases:
+        tcount += 1
+        checker = expect_status_to_be(status)
+        args = [repr(string), status]
+        fcount += test_case('execute_test', checker=checker, args=args)
+
+    return (tcount, fcount)
+
 TEST_SUITES = {
     'init': init_test,
     'next': next_test,
@@ -287,7 +313,8 @@ TEST_SUITES = {
     'printe': printe_test,
     'cfa': cfa_test,
     'gotz': gotz_test,
-    'docolon': docolon_test
+    'docolon': docolon_test,
+    'execute': execute_test
 }
 
 def print_summary(summary):

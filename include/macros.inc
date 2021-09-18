@@ -185,4 +185,10 @@
     dq %1
 %endmacro
 
+;; Unconditionally jump to some label.
+%macro goto 1
+    dq code_field_addr(goto)
+    dq %1
+%endmacro
+
 %endif                          ; MACFORTH_MACROS_INC_

@@ -59,6 +59,18 @@ native "word", word
     push rdx
     jmp next
 
+;; ( addr -- nun len )
+;; Parses an integer from a null-terminated string stored in the buffer
+;; starting at the address `addr`. After this word finished its execution,
+;; TOS will be the length of the number (0 if failed), and NOS will be
+;; the number itself.
+native "number", number
+    pop rdi
+    call parsei
+    push rax
+    push rdx
+    jmp next
+
 ;; ( addr -- header_field_addr | 0 )
 ;; Takes as input an address of a null-terminated string (`addr`) and returns
 ;; the address of the Header Field of the word in the word in the dictionary
@@ -132,9 +144,15 @@ native "prints", prints
     call prints
     jmp next
 
+;; Prints newline character to stdout. This word does not affect the
+;; Paramater Stack.
+native "printn", printn
+    call printn
+    jmp next
+
 ;; ( code_field_addr -- )
 ;; Executes the word whose Code Field Address is TOS.
-native "exe", exe
+native "execute", execute
     pop w
     jmp [w]
 
@@ -167,6 +185,11 @@ native "gotz", gotz
     jmp next
 .skip:
     add pc, 8
+    jmp next
+
+;; Unconditionally jump
+native "goto", goto
+    mov pc, [pc]
     jmp next
 
 ;; ( -- input_buffer_addr )
@@ -228,9 +251,81 @@ colon "printe", printe
     ; Exits COLON word
     dq code_field_addr(exit)
 
+;; Macforth REPL
+colon "repl", repl
+.prompt:
+    ; Prints the prompt ">>> ".
+    dq code_field_addr(lit)
+    dq prompt_string
+    dq code_field_addr(prints)
+.loop:
+    ; Reads next word from stdin into the input buffer.
+    ; The word's length will be pushed onto the Paramater Stack.
+    dq code_field_addr(ibuf)
+    dq code_field_addr(word)
+
+    ; If word's length is 0, we know that we have reach the end of input.
+    ; In this case, we prompt user for next words to execute.
+    gotz .eof
+
+    ; Tries to the find the word whose name matches the string in the
+    ; input buffer.
+    dq code_field_addr(ibuf)
+    dq code_field_addr(find)
+
+    ; If such a word does indeed exist, its Code Field Address is now the
+    ; TOS. Otherwise, TOS is zero. And since `gotz` will consume the TOS,
+    ; we need to duplicate it in order to proceed (if TOS turns out not
+    ; to be equal to 0).
+    dq code_field_addr(dup)
+    gotz .maybe_number
+
+    ; The word does indeed exit. First, we find the address of its Code
+    ; Field given that its Header Field Address is TOS, and then execute it,
+    ; and finally we loop back to read next word.
+    dq code_field_addr(cfa)
+    dq code_field_addr(execute)
+    goto .loop
+.maybe_number:
+    ; First of all, we need to remove the 0 (previously pushed onto
+    ; by the `dup` word, right before gotz .maybe_number)
+    dq code_field_addr(drop)
+
+    ; Tries to parse integer from the null-terminated string stored the
+    ; Input Buffer. TOS will be length, and NOS will be the number.
+    dq code_field_addr(ibuf)
+    dq code_field_addr(number)
+
+    ; If TOS is zero, we know that the input is not a number.
+    dq code_field_addr(dup)
+    gotz .undefined_word_error
+
+    ; TODO: we have to make sure that TOS = string's length, otherwise
+    ; error!
+    dq code_field_addr(drop)
+    goto .loop
+
+.undefined_word_error:
+    dq code_field_addr(drop)
+    dq code_field_addr(drop)
+
+    dq code_field_addr(ibuf)
+    dq code_field_addr(printe)
+    dq code_field_addr(printn)
+
+    ; TODO: flush stdin before prompt user.
+    goto .prompt
+
+.eof:
+    dq code_field_addr(bye)
+    dq code_field_addr(exit)
+
 ;; Since each test case will define its own interpreter.
 ;; TODO: this is just placeholder for now.
 %ifndef TEST
 section .rodata
-interpreter_stub: dq 0
+interpreter_stub: dq code_field_addr(repl)
 %endif
+
+section .rodata
+prompt_string: db ">>> ", 0
