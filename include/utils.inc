@@ -12,6 +12,7 @@ extern parseu
 extern parsei
 extern strequ
 extern tolower
+extern istrequ
 extern strcpy
 extern exit
 %endif

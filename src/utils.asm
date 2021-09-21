@@ -13,6 +13,7 @@ global parseu
 global parsei
 global strequ
 global tolower
+global istrequ
 global strcpy
 global exit
 
@@ -576,6 +577,58 @@ tolower:
     add dil, 32
 .end:
     mov rax, rdi
+    ret
+
+;; istrequ(rdi, rsi) -> rax
+;;
+;; Arguments
+;; ---------
+;; rdi: a pointer to a null-terminated string.
+;; rsi: a pointer to a null-terminated string.
+;;
+;; Description
+;; -----------
+;; Similar to `strequ` but case-insensitive.
+istrequ:
+    push rdi
+    push rsi
+
+    ; Converts the next character of the first string to lowercase, and
+    ; pushes onto the stack.
+    movzx rdi, byte [rdi]
+    call tolower
+    push rax
+
+    ; Converts the next character of the second string to lowercase, and
+    ; compares it with the corresponding lowercase character of the first
+    ; string.
+    movzx rdi, byte [rsi]
+    call tolower
+    cmp al, byte [rsp]
+    jne .no
+
+    ; two characters are equal and they are both equal to null-terminator
+    test al, al
+    jz .yes
+
+    ; Otherwise, restore stack
+    add rsp, 8
+    pop rsi
+    pop rdi
+
+    ; and loop back
+    inc rdi
+    inc rsi
+    jmp istrequ
+
+.yes:
+    add rsp, 24
+    mov rax, 1
+    ret
+
+.no:
+    add rsp, 24
+    xor rax, rax
     ret
 
 ;; strcpy(rdi, rsi, rdx) -> rax.

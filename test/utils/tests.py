@@ -529,6 +529,39 @@ def tolower_test():
 
     return (tcount, fcount)
 
+def istrequ_test():
+    (tcount, fcount) = (0, 0)
+
+    cases = [
+        ('', ''),
+        ('a', 'a'),
+        ('a', 'A'),
+        ('1', '1'),
+        ('abc', 'abc'),
+        ('aBc', 'abc'),
+        ('ABC', 'abc'),
+        ('123', '123'),
+        ('Hello, world!', 'Hello, world!'),
+        ('Hello, world!', 'hello, world!'),
+        ('Hello, World!', 'hello, world!'),
+        ('HELLO, World!', 'hello, world!'),
+        ('HELLO, WORLD!', 'hello, world!'),
+        ('FOO', 'foo'),
+        ('BAR', 'bar'),
+        ('bAR', 'bar'),
+        ('R>', 'r>'),
+        ('>R', '>r'),
+        ('.S', '.s')
+    ]
+
+    for (s1, s2) in cases:
+        tcount += 1
+        args = [repr(s1), repr(s2)]
+        checker = expect_status_to_be(1 if s1.lower() == s2.lower() else 0)
+        fcount += test_case('istrequ_test', args=args, checker=checker)
+
+    return (tcount, fcount)
+
 TEST_SUITES = {
     'strlen': strlen_test,
     'prints': prints_test,
@@ -542,7 +575,8 @@ TEST_SUITES = {
     'parsei': parsei_test,
     'strequ': strequ_test,
     'strcpy': strcpy_test,
-    'tolower': tolower_test
+    'tolower': tolower_test,
+    'istrequ': istrequ_test
 }
 
 def print_summary(summary):
