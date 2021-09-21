@@ -551,7 +551,11 @@ def istrequ_test():
         ('bAR', 'bar'),
         ('R>', 'r>'),
         ('>R', '>r'),
-        ('.S', '.s')
+        ('.S', '.s'),
+        ('foo', 'bar'),
+        ('', ' '),
+        ('', '\n'),
+        ('foo and bar', 'foo and baz')
     ]
 
     for (s1, s2) in cases:
