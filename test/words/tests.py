@@ -51,18 +51,44 @@ def next_test():
     return (1, fcount)
 
 def find_test():
-    tcount = 0
-    fcount = 0
+    (tcount, fcount) = (0, 0)
 
     cases = [
         ('foo', 'foo', 'found'),
+        ('FOO', 'foo', 'found'),
+        ('FoO', 'foo', 'found'),
+
         ('bar', 'bar', 'found'),
+        ('BAR', 'bar', 'found'),
+        ('bAR', 'bar', 'found'),
+
         ('baz', 'baz', 'found'),
+        ('baZ', 'baz', 'found'),
+        ('Baz', 'baz', 'found'),
+        ('BAZ', 'baz', 'found'),
+        ('BaZ', 'baz', 'found'),
+
         ('push-string-addr', 'push_string_addr', 'found'),
+        ('PUSH-STRING-ADDR', 'push_string_addr', 'found'),
+        ('Push-String-Addr', 'push_string_addr', 'found'),
+        ('PuSh-StrING-AdDr', 'push_string_addr', 'found'),
+
         ('check-find', 'check_find', 'found'),
+        ('CHECK-FIND', 'check_find', 'found'),
+        ('chEck-FIND', 'check_find', 'found'),
+        ('CheCk-fInd', 'check_find', 'found'),
+
         ('terminate', 'terminate', 'found'),
+        ('Terminate', 'terminate', 'found'),
+        ('TERMINATE', 'terminate', 'found'),
+
         ('init', 'init', 'found'),
+        ('INIT', 'init', 'found'),
+        ('inIt', 'init', 'found'),
+
         ('find', 'find', 'found'),
+        ('FIND', 'find', 'found'),
+        ('fInD', 'find', 'found'),
 
         ('thing', None, 'not_found')
     ]

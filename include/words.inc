@@ -198,16 +198,16 @@ native "find", find
     ; last word's Header Field
     mov rsi, RIP_REL(last_word_ptr)
 .loop:
-    ; addr of null-terminated string (1st argument to strequ)
+    ; addr of null-terminated string (1st argument to istrequ)
     mov rdi, [rsp]
 
-    ; address of the word's Name Field (2nd argument to strequ). We also
-    ; have to save rsi here so that it will survive strequ call.
+    ; address of the word's Name Field (2nd argument to istrequ). We also
+    ; have to save rsi here so that it will survive istrequ call.
     push rsi
     add rsi, NAME_FIELD_OFFSET
 
     ; Compares two strings and restores previously saved rsi.
-    call strequ
+    call istrequ
     pop rsi
 
     ; If equal rax = 1, otherwise 0
