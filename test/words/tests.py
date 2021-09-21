@@ -512,6 +512,18 @@ def fetch_test():
 
     return (tcount, fcount)
 
+def store_test():
+    (tcount, fcount) = (0, 0)
+
+    numbers = [0, -1, -10, 10, 28, -64, 128, -343, 123456789, -123456789]
+
+    for n in numbers:
+        tcount += 1
+        checker = expect_stdout_to_be(repr(n))
+        fcount += test_case('store_test', checker=checker, args=[n])
+
+    return (tcount, fcount)
+
 TEST_SUITES = {
     'init': init_test,
     'next': next_test,
@@ -535,7 +547,8 @@ TEST_SUITES = {
     'to_r': to_r_test,
     'r_from': r_from_test,
     'r_fetch': r_fetch_test,
-    'fetch': fetch_test
+    'fetch': fetch_test,
+    'store': store_test
 }
 
 def print_summary(summary):

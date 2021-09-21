@@ -80,8 +80,10 @@ native "@", fetch
 
 ;; ( x a-addr -- )
 ;; Store x at a-addr.
-;; TODO: implement this word
 native "!", store
+    pop rax
+    pop rdx
+    mov [rax], rdx
     jmp next
 
 ;; ( c-addr -- char )
