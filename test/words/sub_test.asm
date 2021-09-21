@@ -10,7 +10,17 @@ native "push-three-numbers", push_three_numbers
     jmp next
 
 native "terminate", terminate
-    xor rdi, rdi
+    pop rdi
+    call printi
+
+    mov rdi, SP_CHAR_CODE
+    call printc
+
+    pop rdi
+    call printi
+
+    mov rdi, RIP_REL(stack_base)
+    sub rdi, rsp
     jmp exit
 
 %include "mem.inc"
@@ -22,8 +32,5 @@ _main:
 section .rodata
 interpreter_stub:
     dq code_field_addr(push_three_numbers)
-    dq code_field_addr(dot)
-    dq code_field_addr(dot)
-    dq code_field_addr(dot)
-    dq code_field_addr(dot)
+    dq code_field_addr(sub)
     dq code_field_addr(terminate)

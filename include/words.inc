@@ -14,7 +14,7 @@ native "drop", drop
 
 ;; ( a -- a a)
 ;; Duplicates the TOS (top-of-stack) into NOS (next-on-stack).
-;; Sample image of the Paramater Strack before and after `dup`:
+;; Sample image of the Data Stack before and after `dup`:
 ;;
 ;;   cell#  | initial |  dup
 ;;   -------------------------
@@ -29,7 +29,7 @@ native "dup", dup
 
 ;; ( a b c -- b c a)
 ;; Rotates the top 3 numbers.
-;; Sample image of the Paramater Stack before and after `rot`:
+;; Sample image of the Data Stack before and after `rot`:
 ;;
 ;;   cell#  | initial |  rot
 ;;   -------------------------
@@ -47,10 +47,54 @@ native "rot", rot
     push rax
     jmp next
 
+;; ( a b -- b a)
+; Exchanges the top 2 numbers.
+native "swap", swap
+    pop rax
+    pop rdx
+    push rax
+    push rdx
+    jmp next
+
+;; (a b -- [a - b])
+;; Subtract TOS from NOS and stores the result as new TOS.
+;;
+;;   cell#  | initial |   -
+;;   -------------------------
+;;     0    |   -16   |   89              (TOS)
+;;     1    |    73   |    5              (NOS)
+;;     2    |     5   |    2
+;;     3    |     2   |
+;;     4    |         |
+native "-", sub
+    pop rax
+    sub [rsp], rax
+    jmp next
+
+;; ( x -- ) ( R: -- x)
+;; Moves x (TOS of the Data Stack) to the return stack.
+native ">r", to_r
+    pop rax
+    rpush rax
+    jmp next
+
+;; ( -- x ) ( R: x -- )
+;; Moves x from the Return Stack to the Data Stack.
+native "r>", r_from
+    rpop rax
+    push rax
+    jmp next
+
+;; ( -- x ) (R: x -- x)
+;; Copies x from the return stack to the data stack.
+native "r@", r_fetch
+    push qword [rstack]
+    jmp next
+
 ;; ( input_buffer_addr -- length )
 ;; Reads a word from stdin (skip leading spaces) into the buffer starting at
 ;; the address `input_buffer_addr`. Word's length will be pushed onto the
-;; Paramater Stack.
+;; Data Stack.
 ;; TODO: What if readw failed?
 native "word", word
     pop rdi
@@ -58,6 +102,78 @@ native "word", word
     call readw
     push rdx
     jmp next
+
+;; ( addr -- last_char length )
+;; Reads next word from stdin (skip leading spaces) into the buffer starting
+;; at the address `addr` (TOS). Reading stops when one of these characters
+;; sp, nl, cr, ht is encountered, at end-of-file or error. Last character
+;; encoutered will be NOS, and TOS will be word's length .
+native "repl-word", repl_word
+    pop rdi
+
+    push r14
+    push r15
+
+    xor r14, r14
+    mov r15, INPUT_BUFFER_SIZE
+    dec r15
+
+.first_char:
+    push rdi
+    call readc
+    pop rdi
+
+    cmp al, SP_CHAR_CODE
+    je .first_char
+    cmp al, HT_CHAR_CODE
+    je .first_char
+
+    cmp al, NL_CHAR_CODE
+    je .end
+    cmp al, CR_CHAR_CODE
+    je .end
+
+    test al, al
+    jz .end
+
+.loop:
+    mov byte [rdi + r14], al
+    inc r14
+
+    push rdi
+    call readc
+    pop rdi
+
+    cmp al, SP_CHAR_CODE
+    je .end
+    cmp al, HT_CHAR_CODE
+    je .end
+    cmp al, NL_CHAR_CODE
+    je .end
+    cmp al, CR_CHAR_CODE
+    je .end
+
+    test al, al
+    jz .end
+
+    ; The word is too long for the given buffer.
+    cmp r14, r15
+    je .end
+
+    jmp .loop
+
+.end:
+    mov byte [rdi + r14], 0
+    mov rdx, r14
+
+    pop r15
+    pop r14
+
+    push rax
+    push rdx
+
+    jmp next
+
 
 ;; ( addr -- nun len )
 ;; Parses an integer from a null-terminated string stored in the buffer
@@ -131,7 +247,7 @@ native "cfa", cfa
 
 ;; ( -- a).
 ;; Pushes the content of the cell (8 - bytes) immediately followed this
-;; word onto the Paramater Stack. (lit stands for literal).
+;; word onto the Data Stack. (lit stands for literal).
 native "lit", lit
     push qword [pc]
     add pc, 8
@@ -145,16 +261,78 @@ native "prints", prints
     jmp next
 
 ;; Prints newline character to stdout. This word does not affect the
-;; Paramater Stack.
+;; Data Stack.
 native "printn", printn
     call printn
     jmp next
 
 ;; ( a -- )
-;; Removes TOS from the Paramater Stack and displays it on stdout.
+;; Removes TOS from the Data Stack and displays it on stdout.
 native ".", dot
+    cmp qword RIP_REL(stack_base), rsp
+    jbe .error
     pop rdi
     call printi
+    call printn
+    jmp next
+.error:
+    lea rdi, RIP_REL(empty_stack_error)
+    call prints
+    jmp next
+
+;; Displays the stack without destroying it.
+;;
+;; [stack_base] --> +--------+
+;;                  |   1    |
+;;                  +--------+
+;;                  |   2    |    (NOS)
+;;                  +--------+
+;;                  |   3    |    (TOS)
+;;  rsp ----------> +--------+
+native ".s", display_stack
+    mov rcx, RIP_REL(stack_base)
+
+    mov r8, 8
+    mov rax, rcx
+    sub rax, rsp
+    xor rdx, rdx
+    div r8
+    mov rdi, rax
+
+    push rcx
+    push rdi
+
+    mov rdi, 91
+    call printc
+    pop rdi
+
+    call printi
+
+    mov rdi, 93
+    call printc
+
+    mov rdi, 32
+    call printc
+
+    pop rcx
+
+.loop:
+    cmp rcx, rsp
+    jbe .end
+
+    sub rcx, 8
+    mov rdi, [rcx]
+
+    push rcx
+    call printi
+    mov rdi, 32
+    call printc
+    pop rcx
+
+    jmp .loop
+
+.end:
+    call printn
     jmp next
 
 ;; ( code_field_addr -- )
@@ -200,7 +378,7 @@ native "goto", goto
     jmp next
 
 ;; ( -- input_buffer_addr )
-;; Pushes the address of the input buffer onto the Paramater Stack.
+;; Pushes the address of the input buffer onto the Data Stack.
 native "ibuf", ibuf
     push_addr input_buffer
     jmp next
@@ -208,7 +386,7 @@ native "ibuf", ibuf
 ;; Initialization.
 native "init", init
     mov qword RIP_REL(state_ptr), 0
-    mov rstack, rstack_start
+    lea rstack, RIP_REL(rstack_base + 8 * RSTACK_SIZE)
     mov pc, interpreter_stub
 
     cmp qword RIP_REL(stack_base), 0
@@ -267,16 +445,17 @@ colon "repl", repl
     dq code_field_addr(prints)
 .loop:
     ; Reads next word from stdin into the input buffer.
-    ; The word's length will be pushed onto the Paramater Stack.
+    ; TOS = word's length, NOS = last character read
     dq code_field_addr(ibuf)
-    dq code_field_addr(word)
+    dq code_field_addr(repl_word)
 
-    ; If word's length is 0, we know that we have reach the end of input.
-    ; In this case, we prompt user for next words to execute.
-    gotz .eof
+    ; If word's length is 0, we know that we have encountered end-of-file,
+    ; a newline, or a carriage return character. Note that this `gotz`
+    ; will consume the TOS (word's length).
+    gotz .zero_length
 
-    ; Tries to the find the word whose name matches the string in the
-    ; input buffer.
+    ; Tries to find the word whose name matches the null-terminated
+    ; string in the input buffer.
     dq code_field_addr(ibuf)
     dq code_field_addr(find)
 
@@ -287,12 +466,20 @@ colon "repl", repl
     dq code_field_addr(dup)
     gotz .maybe_number
 
-    ; The word does indeed exit. First, we find the address of its Code
-    ; Field given that its Header Field Address is TOS, and then execute it,
-    ; and finally we loop back to read next word.
+    ; At this point, TOS is the word's Header Field Address and NOS is
+    ; the last character read. Firstly, we need to swap TOS and NOS, and
+    ; then move the last character read to rstack. Secondly, we find
+    ; the word's Code Field Address, and then execute it. And finally, we
+    ; move the last character read back to TOS.
+    dq code_field_addr(swap)
+    dq code_field_addr(to_r)
     dq code_field_addr(cfa)
     dq code_field_addr(execute)
-    goto .loop
+    dq code_field_addr(r_from)
+
+    ; The last character has been read now TOS.
+    goto .check_last_character
+
 .maybe_number:
     ; First of all, we need to remove the 0 (previously pushed onto
     ; by the `dup` word, right before gotz .maybe_number)
@@ -304,26 +491,74 @@ colon "repl", repl
     dq code_field_addr(number)
 
     ; If TOS is zero, we know that the input is not a number.
-    dq code_field_addr(dup)
     gotz .undefined_word_error
 
-    ; TODO: we have to make sure that TOS = string's length, otherwise
-    ; error!
+    ; At this point, TOS = number, NOS = last character read.
+    dq code_field_addr(swap)
+    goto .check_last_character
+
+.undefined_word_error:
+    ; Drops the failed number.
+    dq code_field_addr(drop)
+
+    ; Prints error message.
+    dq code_field_addr(ibuf)
+    dq code_field_addr(printe)
+
+    ; TODO: flush stdin before prompt user.
+    goto .check_last_character
+
+.check_last_character:
+    ; The last character has been read now TOS. If is is '\0' we know
+    ; that we have reached end-of-file.
+    dq code_field_addr(dup)
+    gotz .last_character_is_nul
+
+    ; Or maybe it is a newline character
+    dq code_field_addr(dup)
+    dq code_field_addr(lit)
+    dq NL_CHAR_CODE
+    dq code_field_addr(sub)
+    gotz .last_character_is_nl
+
+    ; Or maybe it is a carriage return character
+    dq code_field_addr(dup)
+    dq code_field_addr(lit)
+    dq CR_CHAR_CODE
+    dq code_field_addr(sub)
+    gotz .last_character_is_cr
+
+    ; Just a normal character.
+    ; TODO: if is is not a whitespace, we know that previous word was
+    ; too long to fit the input buffer.
+    goto .last_character_is_other
+
+.last_character_is_nul:
+    dq code_field_addr(drop)
+    goto .end_of_file
+
+.last_character_is_nl:
+    dq code_field_addr(drop)
+    goto .prompt
+
+.last_character_is_cr:
+    dq code_field_addr(drop)
+    goto .prompt
+
+.last_character_is_other:
     dq code_field_addr(drop)
     goto .loop
 
-.undefined_word_error:
-    dq code_field_addr(drop)
-    dq code_field_addr(drop)
+.zero_length:
+    ; If the last character read is '\0', we know that we have encountered
+    ; end-of-file.
+    gotz .end_of_file
 
-    dq code_field_addr(ibuf)
-    dq code_field_addr(printe)
-    dq code_field_addr(printn)
-
-    ; TODO: flush stdin before prompt user.
+    ; Otherwise, last character must be either a newline or a carriage
+    ; return character.
     goto .prompt
 
-.eof:
+.end_of_file:
     dq code_field_addr(bye)
     dq code_field_addr(exit)
 
@@ -333,6 +568,3 @@ colon "repl", repl
 section .rodata
 interpreter_stub: dq code_field_addr(repl)
 %endif
-
-section .rodata
-prompt_string: db ">>> ", 0

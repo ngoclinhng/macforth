@@ -260,7 +260,7 @@ def printe_test():
 
     for (string, status) in cases:
         tcount += 1
-        expected = 'Error: {} is undefined'.format(string)
+        expected = 'Error: {} is undefined\n'.format(string)
         checker = expect_stdout_to_be(expected)
         args = [repr(string), status]
         fcount += test_case('printe_test', checker=checker, args=args)
@@ -303,17 +303,174 @@ def dot_test():
     (tcount, fcount) = (0, 0)
 
     cases = [
-        ([1, 2, 3], '3 2 1'),
-        ([11, -2, 128], '128 -2 11'),
-        ([10, 10, 10], '10 10 10'),
-        ([-1, -1, -1], '-1 -1 -1'),
-        ([343, 545, -23123], '-23123 545 343')
+        [1, 2, 3],
+        [11, -2, 128],
+        [10, 10, 10],
+        [-1, -1, -1],
+        [343, 545, -23123]
     ]
 
-    for (args, o) in cases:
+    for args in cases:
+        tcount += 1
+
+        err = 'Error: stack is empty\n'
+        rargs = reversed(args)
+        expected = '\n'.join([str(i) for i in rargs] + [err])
+        checker = expect_stdout_to_be(expected)
+
+        fcount += test_case('dot_test', checker=checker, args=args)
+
+    return (tcount, fcount)
+
+def sub_test():
+    (tcount, fcount) = (0, 0)
+
+    cases = [
+        [1, 2, 3],
+        [1, 3, 2],
+        [5, 73, -16],
+        [34, -23, 56],
+        [0, 0, 0],
+        [1, 1, 1],
+        [-3, -6, -7]
+    ]
+
+    for args in cases:
+        tcount += 1
+        (arg0, arg1, arg2) = args
+        expected = '{} {}'.format(arg1 - arg2, arg0)
+        checker = expect_stdout_to_be(expected)
+        fcount += test_case('sub_test', checker=checker, args=args)
+
+    for args in cases:
+        tcount += 1
+        checker = expect_status_to_be(0)
+        fcount += test_case('sub_test', checker=checker, args=args)
+
+    return (tcount, fcount)
+
+def repl_word_test():
+    (tcount, fcount) = (0, 0)
+
+    cases = [
+        ('', '(0,0)'),
+        (' ', '(0,0)'),
+
+        (' \n', '({},{})'.format(0, ord('\n'))),
+        (' \n ', '({},{})'.format(0, ord('\n'))),
+        (' \nabc', '({},{})'.format(0, ord('\n'))),
+        (' \n abc', '({},{})'.format(0, ord('\n'))),
+
+        ('a', 'a({},{})'.format(1, ord('\0'))),
+        ('a\n', 'a({},{})'.format(1, ord('\n'))),
+        ('a \n', 'a({},{})'.format(1, ord(' '))),
+        (' a \n', 'a({},{})'.format(1, ord(' '))),
+        ('a\nbc', 'a({},{})'.format(1, ord('\n'))),
+
+        ('thing', 'thing({},{})'.format(5, ord('\0'))),
+        ('thing\n', 'thing({},{})'.format(5, ord('\n'))),
+        (' thing\n', 'thing({},{})'.format(5, ord('\n'))),
+        ('\tthing\n', 'thing({},{})'.format(5, ord('\n'))),
+        ('\tthing', 'thing({},{})'.format(5, ord('\0'))),
+        ('thing foo bar', 'thing({},{})'.format(5, ord(' ')))
+    ]
+
+    for (i, o) in cases:
         tcount += 1
         checker = expect_stdout_to_be(o)
-        fcount += test_case('dot_test', checker=checker, args=args)
+        fcount += test_case('repl_word_test', checker=checker, stdin=i)
+
+    for (i, _) in cases:
+        tcount += 1
+        checker = expect_status_to_be(0)
+        fcount += test_case('repl_word_test', checker=checker, stdin=i)
+
+    return (tcount, fcount)
+
+def display_stack_test():
+    (tcount, fcount) = (0, 0)
+
+    cases = [
+        [1, 2, 3],
+        [3, 2, 1],
+        [2, 1, 3],
+        [-17, 30, 0],
+        [2, 3212, 11],
+        [-232, -232, -12]
+    ]
+
+    for args in cases:
+        tcount += 1
+
+        rargs = reversed(args)
+        l = len(args)
+        o1 = ' '.join([str(i) for i in args])
+        o2 = ' '.join([str(i) for i in rargs])
+        expected = '[{}] {} \n{}'.format(l, o1, o2)
+
+        checker = expect_stdout_to_be(expected)
+        fcount += test_case('display_stack_test', checker=checker, args=args)
+
+    for args in cases:
+        tcount += 1
+        checker = expect_status_to_be(0)
+        fcount += test_case('display_stack_test', checker=checker, args=args)
+
+    return (tcount, fcount)
+
+def to_r_test():
+    (tcount, fcount) = (0, 0)
+
+    cases = [[1, 2], [-1, -2], [17, -256], [0, 0], [24, -56], [-23, -19]]
+
+    for args in cases:
+        tcount += 1
+        expected = ' '.join([str(i) for i in args])
+        checker = expect_stdout_to_be(expected)
+        fcount += test_case('to_r_test', checker=checker, args=args)
+
+    return (tcount, fcount)
+
+def r_from_test():
+    (tcount, fcount) = (0, 0)
+
+    cases = [
+        [1, 2, 3], [-1, -2, -3], [0, 0, 0], [10, 10, 10], [-34, 12, 17],
+        [3434, 121, -234], [-223, -657, -1223], [0, 23, -567]
+    ]
+
+    for args in cases:
+        tcount += 1
+        expected = ' '.join([str(i) for i in args])
+        checker = expect_stdout_to_be(expected)
+        fcount += test_case('r_from_test', checker=checker, args=args)
+
+    for args in cases:
+        tcount += 1
+        checker = expect_status_to_be(0)
+        fcount += test_case('r_from_test', checker=checker, args=args)
+
+    return (tcount, fcount)
+
+def r_fetch_test():
+    (tcount, fcount) = (0, 0)
+
+    cases = [[1, 2], [0, 0], [-1, -2], [10, 234], [-11, -17], [80, 67]]
+
+    for args in cases:
+        tcount += 1
+        (_, arg1) = args
+        rargs = reversed(args)
+        o1 = ' '.join([str(i) for i in [arg1] * 3])
+        o2 = ' '.join([str(i) for i in rargs])
+        expected = '{}\n{}'.format(o1, o2)
+        checker = expect_stdout_to_be(expected)
+        fcount += test_case('r_fetch_test', checker=checker, args=args)
+
+    for args in cases:
+        tcount += 1
+        checker = expect_status_to_be(0)
+        fcount += test_case('r_fetch_test', checker=checker, args=args)
 
     return (tcount, fcount)
 
@@ -333,7 +490,13 @@ TEST_SUITES = {
     'gotz': gotz_test,
     'docolon': docolon_test,
     'execute': execute_test,
-    'dot': dot_test
+    'dot': dot_test,
+    'sub': sub_test,
+    'repl_word': repl_word_test,
+    'display_stack': display_stack_test,
+    'to_r': to_r_test,
+    'r_from': r_from_test,
+    'r_fetch': r_fetch_test
 }
 
 def print_summary(summary):

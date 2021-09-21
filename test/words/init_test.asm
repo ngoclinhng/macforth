@@ -11,7 +11,8 @@ native "check-init", check_init
     jnz .state_error
 
     ; Make sure rstack (Return Stack Pointer) is correctly initialized.
-    lea rdi, RIP_REL(rstack_start)
+    lea rdi, RIP_REL(rstack_base)
+    add rdi, 8 * RSTACK_SIZE
     cmp rstack, rdi
     jnz .rstack_error
 

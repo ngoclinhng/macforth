@@ -15,12 +15,6 @@ global strequ
 global strcpy
 global exit
 
-;; whitespace characters: space, newline, carriage return, horizontal tab
-%define SP_CHAR_CODE 32
-%define NL_CHAR_CODE 10
-%define CR_CHAR_CODE 13
-%define HT_CHAR_CODE 9
-
 section .text
 
 ;; strlen(rdi) -> rax.
@@ -314,6 +308,101 @@ readw:
     pop r14
 
     ret
+
+;; gets(rdi, rsi) -> (rax, rdx).
+;;
+;; Arguments
+;; ---------
+;; rdi: buffer's address.
+;; rsi: buffer's size.
+;;
+;; Description
+;; -----------
+;; Reads at most one less than the number of characters specified by size
+;; (stored in rsi) from stdin and stores them in the destination buffer
+;; whose address is stored in rdi. Reading stops when either a newline
+;; character or a carriage return character is found, at end-of-file or
+;; error. The newline character or carriage return character, if any, is not
+;; retained.
+; gets:
+;     ; r14 will store the index into the buffer of the next character, and
+;     ; r15 will store the maximum number of characters allowed (equals to
+;     ; buffer's size - 1).
+;     push r14
+;     push r15
+
+;     ; Initializes index and maximum number of characters allowed.
+;     xor r14, r14
+;     mov r15, rsi
+;     dec r15
+
+;     ; If maximum number of characters allowed is 0, there is nothing
+;     ; to do. (this only happens if buffer' size is 1).
+;     test r15, r15
+;     jz .error
+
+; .first_char:
+;     ; Reads first character from stdin and stores it in rax.
+;     push rdi
+;     readc
+;     pop rdi
+
+;     ; If the first character happens to be a newline, a carriage return
+;     ; character or end-of-file, stop the reading.
+;     cmp al, NL_CHAR_CODE
+;     je .end
+;     cmp al, CR_CHAR_CODE
+;     je .end
+;     test al, al
+;     jz .end
+
+; .loop:
+;     ; Stores the previously read character at the desired index.
+;     mov byte [rdi + r14], al
+;     inc r14
+
+;     ; Reads next character.
+;     push rdi
+;     readc
+;     pop rdi
+
+;     ; If this character happens to be a newline, a carriage return
+;     ; character or end-of-file, stop the reading.
+;     cmp al, NL_CHAR_CODE
+;     je .end
+;     cmp al, CR_CHAR_CODE
+;     je .end
+;     test al, al
+;     jz .end
+
+;     ; This is a `normal` character but we have just reached the maximum
+;     ; number of characters allowed. If this is the case, goto .error
+;     cmp r14, r15
+;     je .error
+
+;     ; Otherwise, loop back.
+;     jmp .loop
+
+; .error:
+;     xor rax, rax
+;     pop r15
+;     pop r14
+;     ret
+
+; .end:
+;     ; Appends the null-terminator.
+;     mov byte [rdi + r14], 0
+
+;     ; Returns values.
+;     mov rax, rdi
+;     mov rdx, r14
+
+;     ; Restores callee-saved registers.
+;     pop r15
+;     pop r14
+
+;     ret
+
 
 ;; parseu(rdi) -> (rax, rdx).
 ;;
