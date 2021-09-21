@@ -524,6 +524,26 @@ def store_test():
 
     return (tcount, fcount)
 
+def c_fetch_test():
+    (tcount, fcount) = (0, 0)
+
+    strings = ['foo', 'bar', 'baz', 'FOO', 'BAR', 'BAZ', ' ', '@#$!%',
+               '123', '-1', '+-/*']
+
+    for s in strings:
+        tcount += 1
+        checker = expect_status_to_be(ord(s[0]))
+        args = [repr(s)]
+        fcount += test_case('c_fetch_test', checker=checker, args=args)
+
+    for s in strings:
+        tcount += 1
+        checker = expect_stdout_to_be(s)
+        args = [repr(s)]
+        fcount += test_case('c_fetch_test', checker=checker, args=args)
+
+    return (tcount, fcount)
+
 TEST_SUITES = {
     'init': init_test,
     'next': next_test,
@@ -548,7 +568,8 @@ TEST_SUITES = {
     'r_from': r_from_test,
     'r_fetch': r_fetch_test,
     'fetch': fetch_test,
-    'store': store_test
+    'store': store_test,
+    'c_fetch': c_fetch_test
 }
 
 def print_summary(summary):

@@ -72,7 +72,7 @@ native "-", sub
     jmp next
 
 ;; ( a-addr -- x)
-;; Fetch a value (x) stored at a-addr.
+;; Fetch the value (8 bytes) stored at a-addr.
 native "@", fetch
     pop rax
     push qword [rax]
@@ -87,9 +87,11 @@ native "!", store
     jmp next
 
 ;; ( c-addr -- char )
-;; Fetch the character stored at c-addr.
-;; TODO: implement this word
+;; Fetch the character (1 byte) stored at c-addr.
 native "c@", c_fetch
+    pop rax
+    movzx rax, byte [rax]
+    push rax
     jmp next
 
 ;; ( char c-addr -- )
