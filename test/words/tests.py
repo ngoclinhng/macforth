@@ -500,6 +500,18 @@ def r_fetch_test():
 
     return (tcount, fcount)
 
+def fetch_test():
+    (tcount, fcount) = (0, 0)
+
+    numbers = [0, -1, -10, 10, 28, -64, 128, -343, 123456789, -123456789]
+
+    for n in numbers:
+        tcount += 1
+        checker = expect_stdout_to_be(repr(n))
+        fcount += test_case('fetch_test', checker=checker, args=[n])
+
+    return (tcount, fcount)
+
 TEST_SUITES = {
     'init': init_test,
     'next': next_test,
@@ -522,7 +534,8 @@ TEST_SUITES = {
     'display_stack': display_stack_test,
     'to_r': to_r_test,
     'r_from': r_from_test,
-    'r_fetch': r_fetch_test
+    'r_fetch': r_fetch_test,
+    'fetch': fetch_test
 }
 
 def print_summary(summary):

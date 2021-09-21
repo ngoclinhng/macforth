@@ -71,6 +71,31 @@ native "-", sub
     sub [rsp], rax
     jmp next
 
+;; ( a-addr -- x)
+;; Fetch a value (x) stored at a-addr.
+native "@", fetch
+    pop rax
+    push qword [rax]
+    jmp next
+
+;; ( x a-addr -- )
+;; Store x at a-addr.
+;; TODO: implement this word
+native "!", store
+    jmp next
+
+;; ( c-addr -- char )
+;; Fetch the character stored at c-addr.
+;; TODO: implement this word
+native "c@", c_fetch
+    jmp next
+
+;; ( char c-addr -- )
+;; Store char at c-addr.
+;; TODO: implement this word
+native "c!", c_store
+    jmp next
+
 ;; ( x -- ) ( R: -- x)
 ;; Moves x (TOS of the Data Stack) to the return stack.
 native ">r", to_r
@@ -436,6 +461,12 @@ colon "printe", printe
     ; Exits COLON word
     dq code_field_addr(exit)
 
+native "print-ok", print_ok
+    lea rdi, RIP_REL(ok_string)
+    call green_prints
+    call printn
+    jmp next
+
 ;; Macforth REPL
 colon "repl", repl
 .prompt:
@@ -539,10 +570,12 @@ colon "repl", repl
 
 .last_character_is_nl:
     dq code_field_addr(drop)
+    dq code_field_addr(print_ok)
     goto .prompt
 
 .last_character_is_cr:
     dq code_field_addr(drop)
+    dq code_field_addr(print_ok)
     goto .prompt
 
 .last_character_is_other:

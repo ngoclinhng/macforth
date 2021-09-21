@@ -57,5 +57,5 @@ undefined_word_undef: db " is undefined", 10, 0
 empty_stack_error: db "Error: stack is empty", 10, 0
 
 prompt_string: db ">>> ", 0
-
+ok_string: db "ok", 0
 %endif                          ; MACFORTH_MEM_INC_
