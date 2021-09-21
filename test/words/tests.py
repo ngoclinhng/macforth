@@ -4,6 +4,7 @@ from testhelper import nasm, test_case
 from testhelper import expect_status_to_be, expect_stdout_to_be
 from termcolor import colored
 from functools import reduce
+from string import ascii_lowercase, ascii_uppercase, punctuation
 import random
 
 def build_utils():
@@ -544,6 +545,46 @@ def c_fetch_test():
 
     return (tcount, fcount)
 
+def c_store_test():
+    (tcount, fcount) = (0, 0)
+
+    ascii_chars = ascii_lowercase + ascii_uppercase + punctuation
+    c1 = [(repr(c), c) for c in ascii_chars]
+
+    c2 = [
+        ('0x41', 'A'),
+        ('0x4142', 'B'),
+        ('0x414243', 'C'),
+        ('0x41424344', 'D'),
+        ('0x4142434445', 'E'),
+        ('0x414243444546', 'F'),
+        ('0x41424344454647', 'G'),
+        ('0x4142434445464748', 'H'),
+
+        ('0x61', 'a'),
+        ('0x6162', 'b'),
+        ('0x616263', 'c'),
+        ('0x61626364', 'd'),
+        ('0x6162636465', 'e'),
+        ('0x616263646566', 'f'),
+        ('0x61626364656667', 'g'),
+        ('0x6162636465666768', 'h')
+    ]
+
+    cases = c1 + c2
+
+    for (i, o) in cases:
+        tcount += 1
+        checker = expect_stdout_to_be(o + 'END')
+        fcount += test_case('c_store_test', checker=checker, args=[i])
+
+    for (i, o) in cases:
+        tcount += 1
+        checker = expect_status_to_be(ord(o))
+        fcount += test_case('c_store_test', checker=checker, args=[i])
+
+    return (tcount, fcount)
+
 TEST_SUITES = {
     'init': init_test,
     'next': next_test,
@@ -569,7 +610,8 @@ TEST_SUITES = {
     'r_fetch': r_fetch_test,
     'fetch': fetch_test,
     'store': store_test,
-    'c_fetch': c_fetch_test
+    'c_fetch': c_fetch_test,
+    'c_store': c_store_test
 }
 
 def print_summary(summary):

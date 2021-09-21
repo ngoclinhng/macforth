@@ -95,9 +95,11 @@ native "c@", c_fetch
     jmp next
 
 ;; ( char c-addr -- )
-;; Store char at c-addr.
-;; TODO: implement this word
+;; Store char (1 byte) at c-addr.
 native "c!", c_store
+    pop rax
+    pop rdx
+    mov [rax], dl
     jmp next
 
 ;; ( x -- ) ( R: -- x)
