@@ -4,6 +4,7 @@ from testhelper import nasm, test_case
 from testhelper import expect_status_to_be, expect_stdout_to_be
 from termcolor import colored
 from functools import reduce
+from string import ascii_lowercase, ascii_uppercase, punctuation
 import random
 
 def build_utils():
@@ -506,6 +507,28 @@ def strcpy_test():
 
     return (tcount, fcount)
 
+def tolower_test():
+    (tcount, fcount) = (0, 0)
+
+    i1 = [c for c in ascii_uppercase]
+    o1 = [ord(c) for c in ascii_lowercase]
+
+    i2 = [c for c in ascii_lowercase]
+    o2 = o1
+
+    i3 = [p for p in punctuation]
+    o3 = [ord(p) for p in i3]
+
+    cases = zip(i1 + i2 + i3, o1 + o2 + o3)
+
+    for (i, o) in cases:
+        tcount += 1
+        checker = expect_status_to_be(o)
+        args = [repr(i)]
+        fcount += test_case('tolower_test', checker=checker, args=args)
+
+    return (tcount, fcount)
+
 TEST_SUITES = {
     'strlen': strlen_test,
     'prints': prints_test,
@@ -518,7 +541,8 @@ TEST_SUITES = {
     'parseu': parseu_test,
     'parsei': parsei_test,
     'strequ': strequ_test,
-    'strcpy': strcpy_test
+    'strcpy': strcpy_test,
+    'tolower': tolower_test
 }
 
 def print_summary(summary):

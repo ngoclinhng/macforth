@@ -12,6 +12,7 @@ global readw
 global parseu
 global parsei
 global strequ
+global tolower
 global strcpy
 global exit
 
@@ -554,6 +555,27 @@ strequ:
 
 .no:
     xor rax, rax
+    ret
+
+;; tolower(rdi) -> rax.
+;;
+;; Arguments
+;; ---------
+;; rdi: A character code.
+;;
+;; Description
+;; -----------
+;; If argument is an upper-case letter, the function returns the
+;; corresponding lower-case letter if there is one; otherwise, the argument
+;; is returned unchanged.
+tolower:
+    cmp dil, 65
+    jb .end
+    cmp dil, 90
+    ja .end
+    add dil, 32
+.end:
+    mov rax, rdi
     ret
 
 ;; strcpy(rdi, rsi, rdx) -> rax.

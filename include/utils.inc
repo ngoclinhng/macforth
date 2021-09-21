@@ -11,6 +11,7 @@ extern readw
 extern parseu
 extern parsei
 extern strequ
+extern tolower
 extern strcpy
 extern exit
 %endif
