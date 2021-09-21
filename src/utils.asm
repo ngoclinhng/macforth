@@ -15,6 +15,8 @@ global strequ
 global tolower
 global istrequ
 global strcpy
+global red_prints
+global green_prints
 global exit
 
 section .text
@@ -60,6 +62,40 @@ prints:
     syscall
 
     ret
+
+;; red_prints(rdi) -> stdout.
+;; Similar to prints but text will be printed with ANSI red color.
+red_prints:
+    push rdi
+
+    ; Prints ANSI escape sequence for red foreground
+    lea rdi, [rel ansi_fg_red]
+    call prints
+
+    ; Prints the actual string.
+    pop rdi
+    call prints
+
+    ; Prints ANSI reset sequence.
+    lea rdi, [rel ansi_reset]
+    jmp prints
+
+;; green_prints(rdi) -> stdout
+;; Similar to prints but text will be printed with ANSI green color.
+green_prints:
+    push rdi
+
+    ; Prints ANSI escape sequence for red foreground
+    lea rdi, [rel ansi_fg_green]
+    call prints
+
+    ; Prints the actual string.
+    pop rdi
+    call prints
+
+    ; Prints ANSI reset sequence.
+    lea rdi, [rel ansi_reset]
+    jmp prints
 
 ;; printn() -> stdout.
 ;;
@@ -695,3 +731,14 @@ strcpy:
 exit:
     mov rax, SYSCALL_EXIT
     syscall
+
+section .rodata
+
+;; \e[0m
+ansi_reset: db 27,91,'0m',0
+
+;; ANSI red foreground
+ansi_fg_red: db 27,91,'31m',0
+
+;; ANSI green foreground
+ansi_fg_green: db 27,91,'32m',0

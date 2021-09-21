@@ -14,5 +14,7 @@ extern strequ
 extern tolower
 extern istrequ
 extern strcpy
+extern red_prints
+extern green_prints
 extern exit
 %endif

@@ -566,6 +566,47 @@ def istrequ_test():
 
     return (tcount, fcount)
 
+def red_prints_test():
+    (tcount, fcount) = (0, 0)
+
+    strings = ['foo', 'ok', 'bar', 'foo and bar', 'red', 'this is red']
+
+    for s in strings:
+        tcount += 1
+        args = [repr(s)]
+        expected = '\x1b[31m{}\x1b[0m'.format(s)
+        checker = expect_stdout_to_be(expected)
+        fcount += test_case('red_prints_test', checker=checker,args=args)
+
+    for s in strings:
+        tcount += 1
+        args = [repr(s)]
+        checker = expect_status_to_be(0)
+        fcount += test_case('red_prints_test', checker=checker,args=args)
+
+    return (tcount, fcount)
+
+
+def green_prints_test():
+    (tcount, fcount) = (0, 0)
+
+    strings = ['foo', 'ok', 'bar', 'foo and bar', 'green', 'this is greeen']
+
+    for s in strings:
+        tcount += 1
+        args = [repr(s)]
+        expected = '\x1b[32m{}\x1b[0m'.format(s)
+        checker = expect_stdout_to_be(expected)
+        fcount += test_case('green_prints_test', checker=checker,args=args)
+
+    for s in strings:
+        tcount += 1
+        args = [repr(s)]
+        checker = expect_status_to_be(0)
+        fcount += test_case('green_prints_test', checker=checker,args=args)
+
+    return (tcount, fcount)
+
 TEST_SUITES = {
     'strlen': strlen_test,
     'prints': prints_test,
@@ -580,7 +621,9 @@ TEST_SUITES = {
     'strequ': strequ_test,
     'strcpy': strcpy_test,
     'tolower': tolower_test,
-    'istrequ': istrequ_test
+    'istrequ': istrequ_test,
+    'red_prints': red_prints_test,
+    'green_prints': green_prints_test
 }
 
 def print_summary(summary):
