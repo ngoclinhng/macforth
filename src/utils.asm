@@ -1,27 +1,29 @@
-%include "constants.inc"
+%include "macros.inc"
 
 ;; Export symbols
-global strlen
-global prints
-global printn
-global printc
-global printu
-global printi
-global readc
-global readw
-global parseu
-global parsei
-global strequ
-global tolower
-global istrequ
-global strcpy
-global red_prints
-global green_prints
-global exit
+;; ---------------
+
+global string_length
+global print_string
+global print_counted_string
+global print_char
+global print_uint
+global print_int
+global read_char
+global parse_name
+global char_case_cmp
+global char_copy
+
+global DOCOL
+global DOVAR
+
+global input_buffer
+global input_buffer_offset
+global input_buffer_length
 
 section .text
 
-;; strlen(rdi) -> rax.
+;; string_length(rdi) -> rax.
 ;;
 ;; Arguments
 ;; ---------
@@ -31,7 +33,7 @@ section .text
 ;; -----------
 ;; Takes as argument a pointer to a null-terminated string, computes its
 ;; length, and returns the result in rax.
-strlen:
+string_length:
     xor rax, rax
 .loop:
     cmp byte [rdi + rax], 0     ; Is next character a null-terminator?
@@ -41,7 +43,7 @@ strlen:
 .end:
     ret
 
-;; prints(rdi) -> stdout.
+;; print_string(rdi) -> stdout.
 ;;
 ;; Arguments
 ;; ---------
@@ -51,9 +53,9 @@ strlen:
 ;; -----------
 ;; Takes as argument a pointer to a null-terminated string, and outputs it
 ;; to stdout.
-prints:
+print_string:
     push rdi
-    call strlen
+    call string_length
     pop rsi                     ; source
     mov rdx, rax                ; num bytes to be written
 
@@ -63,535 +65,326 @@ prints:
 
     ret
 
-;; red_prints(rdi) -> stdout.
-;; Similar to prints but text will be printed with ANSI red color.
-red_prints:
-    push rdi
-
-    ; Prints ANSI escape sequence for red foreground
-    lea rdi, [rel ansi_fg_red]
-    call prints
-
-    ; Prints the actual string.
-    pop rdi
-    call prints
-
-    ; Prints ANSI reset sequence.
-    lea rdi, [rel ansi_reset]
-    jmp prints
-
-;; green_prints(rdi) -> stdout
-;; Similar to prints but text will be printed with ANSI green color.
-green_prints:
-    push rdi
-
-    ; Prints ANSI escape sequence for red foreground
-    lea rdi, [rel ansi_fg_green]
-    call prints
-
-    ; Prints the actual string.
-    pop rdi
-    call prints
-
-    ; Prints ANSI reset sequence.
-    lea rdi, [rel ansi_reset]
-    jmp prints
-
-;; printn() -> stdout.
-;;
-;; Arguments
-;; ----------
-;; This function does not take any arguments.
-;;
-;; Description
-;; -----------
-;; Outputs newline character to stdout.
-;;
-;; Implementation notes
-;; --------------------
-;; This function doesn't actually do anything except write the newline
-;; character into rdi, which then gets passed into `printc` right below it.
-printn:
-    mov rdi, 10
-
-;; printc(rdi) -> stdout.
+;; print_counted_string(rdi, rsi) -> stdout.
 ;;
 ;; Arguments
 ;; ---------
-;; rdi: single character code
+;; rdi: the address of a string (not neccessarily null-terminated).
+;; rsi: the length of the above string (its number of characters).
 ;;
 ;; Description
 ;; -----------
-;; Takes as argument a single character code and outputs it to stdout.
-printc:
+;; Takes as arguments an address of a string and its character count, and
+;; prints it out to stdout.
+print_counted_string:
+    mov rdx, rsi                ; number of bytes
+    mov rsi, rdi                ; source
+    mov rax, SYSCALL_WRITE      ; write syscall
+    mov rdi, STDOUT_FILENO      ; destination
+    syscall
+    ret
+
+;; print_char(rdi) -> stdout.
+;;
+;; Arguments
+;; ---------
+;; rdi: A single character code.
+;;
+;; Description
+;; -----------
+;; Takes as argument a single character code and outputs it to stdout. If
+;; rdi is not a character code, its lowest byte (dl) will be printed out
+;; instead!
+print_char:
     ; FIXME: the following implementation implicitly assumes that the
     ; target machine is Little Endian, so that after pushing rdi on top
     ; of the stack, rsp is the address of the least significant byte
     ; in rdi (dl).
     push rdi
-    mov rdi, rsp
-    call prints
+    mov rsi, rsp                ; source
+
+    mov rax, SYSCALL_WRITE
+    mov rdi, STDOUT_FILENO      ; destination
+    mov rdx, 1                  ; 1 byte
+    syscall
+
     pop rdi
     ret
 
-;; printu(rdi) -> stdout.
+;; print_uint(rdi, rsi) -> stdout.
 ;;
 ;; Arguments
 ;; ---------
 ;; rdi: 8 bytes represents an unsigned integer.
+;; rsi: base, ranging from 2 up to 36 (inclusive).
 ;;
 ;; Description
 ;; -----------
-;; Takes as input an unsigned integer and outputs it to stdout.
+;; Converts the unsgined integer to base (hex, decimal, binary, etc...),
+;; and print_string it out to stdout.
 ;;
-;; Implementation notes
-;; --------------------
-;; Let's take a look at an application of `printu`:
+;; Rule of conversion:
 ;;
-;;   mov rdi, 123
-;;   call printu
+;; 1. Digits with decimal values ranging from 0 to 9 correspond to
+;;    characters '0' to '9', respectively.
 ;;
-;; We would expect the string '123' to be printed to stdout. But how are
-;; we about to convert 64 bits of 0s and 1s in rdi to the string '123'?
+;; 2. Digits with decimal values ranging from 10 up to 35 (inclusive)
+;;    correspond to characters 'A' to 'Z', respectively.
 ;;
-;; Perform unsgined division whatever shit in rdi by 10. The quotient is
-;; the bit pattern for the unsigned integer 12, and the remainder is the
-;; bit pattern for the unsgined integer 3. In general, the remainder is the
-;; 4-bit pattern (all other leading bits are 0) for one of the 10 digits
-;; (0-9), and by xoring it with 1 byte 0x30, we will get the ASCII character
-;; representing that digit. Repeat this procudure until the quotient is 0,
-;; we would get all the wanted digits.
-;;
-;; We also need to store each byte generated (at each iteration) on the
-;; stack. But how much memory (on the stack) should we allocate? Well, the
-;; biggest 8-byte unsigned integer corresponding to all bits are turned on
-;; in rdi, which is the number 2^64-1 = 1.844674407E19 (20 digits) in
-;; decimal format. So, we need to allocate at least 20 bytes on the stack.
-printu:
-    mov rax, rdi                ; needed for DIV instruction
-    mov rdi, rsp                ; at the end, rdi points to digits string
+;; 3. If x_n,x_(n-1),...,x_0 is the result of the conversion, the decimal
+;;    value of the original (unsigned) number is:
+;;    x_n * base^n + x_(n-1) * base^(n-1) + ... + x_0
+print_uint:
+    ; Setup for div instruction
+    mov rax, rdi
+    mov r8, rsi
 
+    ; Address to write next digit. At the end, rdi points to the digits
+    ; string.
+    mov rdi, rsp
+
+
+    ; Allocate space on the stack to store digits. How many bytes do we
+    ; need to allocate? Well, the biggest 8-byte unsigned integer
+    ; corresponds to all bits are turned on, so, if the base is 2 (lowest
+    ; base allowed) we need 64 bytes to hold all digits for this number.
+    ; In general, we'll need at most 64 bytes to hold the digits string.
     push 0                      ; 8 bytes, all zeros
-    sub rsp, 16                 ; 16 more bytes
-
+    sub rsp, 64                 ; 64 more bytes
     dec rdi                     ; so that digits string is null-terminated
-    mov r8, 10                  ; needed for DIV instruction
-
 .loop:
     xor rdx, rdx                ; unsigned divide rdx:rax by
     div r8                      ; r8
 
-    or dl, 0x30                 ; rdx is remainder, rax is quotient
+    ; rdx is the remainder. Since our base ranges from 2 up to 36, and
+    ; 0 <= remainder < base, only the lowest byte (dl) of rdx matters (all
+    ; leading bytes are zero). If the value of the digit stored in dl is
+    ; in the range 0 to 9, we "or" it with the byte `0x30` to get its
+    ; character representation. Otherwise, we add it with the byte `0x37`
+    ; to convert it to the corresponding character.
+    cmp dl, 10
+    jae .ae_ten
+    or dl, 0x30
+    jmp .continue
+.ae_ten:
+    add dl, 0x37
+.continue
+    ; Write the character.
     dec rdi
     mov [rdi], dl
 
-    test rax, rax               ; is quotient zero?
+    ; rax is the quotient. If the quotient is not zero, we'll loop back.
+    ; Otherwise, we're done.
+    test rax, rax
     jnz .loop
 
-    call prints
-    add rsp, 24                 ; restore rsp
+    ; If the base is 16, we need to append '0x' to the digits string.
+    cmp r8, 16
+    je .append_hex
+
+    ; Else if the base is 2, append '0b'
+    cmp r8, 2
+    je .append_bin
+
+    ; Else if the base is 8, append '0o'
+    cmp r8, 8
+    je .append_oct
+
+    ; For other format, we leave the number as-is.
+    jmp .end
+.append_hex:
+    sub rdi, 2
+    mov word [rdi], 0x7830
+    jmp .end
+.append_bin:
+    sub rdi, 2
+    mov word [rdi], 0x6230
+    jmp .end
+.append_oct:
+    sub rdi, 2
+    mov word [rdi], 0x6f30
+.end:
+    call print_string           ; Print digits string to stdout
+    add rsp, 72                 ; Restore rsp
     ret
 
-;; printi(rdi) -> stdout.
-;;
-;; Arguments
-;; ----------
-;; rdi: 8-byte, signed integer
-;;
-;; Description
-;; -----------
-;; Takes as input 8-byte, signed integer, and outputs it to stdout.
-printi:
+;; print_int(rdi, rsi) -> stdout.
+;; Same as print_uint, except this function deals with signed integer.
+print_int:
     test rdi, rdi
-    jns printu
+    jns print_uint
 
     push rdi
+    push rsi
     mov rdi, '-'
-    call printc
+    call print_char
+    pop rsi
     pop rdi
 
     neg rdi
-    jmp printu
+    jmp print_uint
 
-;; readc() -> rax.
+;; read_char(stdin) -> rax.
 ;;
-;; Arguments:
-;; ----------
-;; This function does not take any arguments.
+;; Reads next byte (at the index input_buffer_offset) from the input buffer
+;; and returns it in rax.
 ;;
-;; Description
-;; -----------
-;; Reads next character from stdin and stores in in rax. If the end of
-;; input stream occurs, rax will hold zero instead.
-readc:
-    push 0
+;; If the input buffer is exhausted (when input_buffer_offset equals to
+;; input_buffer_length), read_char will refill it automatically with more
+;; characters read from stdin, set input_buffer_length to the number of bytes
+;; that has been read from stdin, reset input_buffer_offset to zero, and go
+;; back to read next byte (as if the input buffer had never been exhausted
+;; in the first place).
+;;
+;; During the process of reading more characters from stdin, if an error or
+;; end-of-file is encountered, read_char will terminate the program!
+;; (with the exit status of 0).
+read_char:
+    ; Read the offset into rcx and compare it with the length of the input
+    ; buffer. If the offset is either equal or "above" the length, we know
+    ; that we have just exhausted the input buffer.
+    mov rcx, riprel(input_buffer_offset)
+    cmp rcx, riprel(input_buffer_length)
+    jae .read_more
 
+    ; Compute the address of next char.
+    lea rax, riprel(input_buffer)
+    add rax, rcx
+
+    ; Read next char into rax.
+    movzx rax, byte [rax]
+
+    ; Increment the offset and return.
+    inc rcx
+    mov riprel(input_buffer_offset), rcx
+    ret
+.read_more:
+    ; Read at most INPUT_BUFFER_SIZE bytes from stdin into the input buffer
     mov rax, SYSCALL_READ
-    mov rdi, STDIN_FILENO       ; source
-    mov rsi, rsp                ; buffer
-    mov rdx, 1                  ; read 1 byte
+    mov rdi, STDIN_FILENO
+    lea rsi, riprel(input_buffer)
+    mov rdx, INPUT_BUFFER_SIZE
     syscall
 
-    pop rax
+    ; If successful, rax = number of bytes actually read. Otherwise,
+    ; rax = 0 (if end-of-file) or -1 (if error).
+    test rax, rax
+    jle .exit
+
+    ; Reset offset and length and go back to read as normally.
+    mov riprel(input_buffer_length), rax
+    mov qword riprel(input_buffer_offset), 0
+    jmp read_char
+.exit:
+    xor rdi, rdi
+    mov rax, SYSCALL_EXIT
+    syscall
+
+;; parse_name(stdin) -> (rax, rdx)
+;;
+;; parse_name first skips leading blanks (any character that has hex value
+;; less than or equal to 0x20 including spaces, tabs, newlines, and so on).
+;; Then it repeatedly calls read_char until either a blank is found or end
+;; of the input buffer. At this point, it returns the address (within the
+;; input buffer) of the parsed string in rax, and its length in rdx.
+parse_name:
+    call read_char              ; keep looking for the first non-blank
+    cmp al, SP_CHAR             ; is is a blank?
+    jbe parse_name              ; if so, keep looking
+
+    push r14                    ; r14 is a callee-saved register
+    push r15                    ; so is r15
+
+    xor r15, r15                ; length
+
+    ; The final address of the parsed string.
+    lea r14, riprel(input_buffer)
+    mov rax, riprel(input_buffer_offset)
+    add r14, rax
+    dec r14
+.loop:
+    inc r15
+
+    ; When we hit the end of the input buffer, next call to read_char will
+    ; refill this buffer with new contents and completedly overwrite the
+    ; partially parsed string.
+    mov rax, riprel(input_buffer_offset)
+    cmp rax, riprel(input_buffer_length)
+    jae .end
+
+    ; Keep reading until a blank is found.
+    call read_char
+    cmp al, SP_CHAR
+    ja .loop
+.end:
+    mov rax, r14
+    mov rdx, r15
+    pop r15
+    pop r14
     ret
 
-;; readw(rdi, rsi) -> (rax, rdx).
+;; read_word(stdin) -> rax.
 ;;
-;; Arguments
-;; ---------
-;; rdi: the buffer's address.
-;; rsi: the buffer's size.
+;; read_word first skips any blanks (spaces, tabs, newlines, and so on).
+;; Then it repeatedly calls read_char to read characters into an internal
+;; buffer until it hits a blank. Finally it returns the address of the
+;; counted string in rax:
 ;;
-;; Description
-;; -----------
-;; Reads at most (size - 1) consecutive, non-whitespace characters from
-;; stdin and stores the null-terminated string into the buffer (whose
-;; address is stored in rdi). When this function returns, rax will hold
-;; the buffer's address (which is also the address of the null-terminated
-;; string has just been read) and rdx will hold the string's length.
-;; If the word is too big for the specified buffer size, rax will hold zero
-;; instead.
-;; Note that: readw will skip all leading whitespaces until it encounters a
-;; non-whitespace character or the end of input stream.
-readw:
-    ; r14 will store the index into the
-    ; buffer of next character, and r15
-    ; will store the maximum number of
-    ; characters allowed (equal to buffer's size - 1).
+;;   <-- 1 byte -->
+;;   +------------+----------......----------+
+;;   |     LEN    |        CHARACTERS        |
+;;   +------------+----------......----------+
+;;   ^
+;;   |
+;;   rax
+;;
+;; Note that read_word has an internal buffer of size WORD_BUFFER_SIZE bytes
+;; that it overwrites each time. Also notice that if the word length exceeds
+;; the MAX_WORD_LENGTH value, rax will hold zero!
+read_word:
+    ; Save callee-saved registers.
     push r14
     push r15
 
-    ; Initialize index and maximum number
-    ; of characters allowed.
-    xor r14, r14
-    mov r15, rsi
-    dec r15
+    lea r14, riprel(word_buffer)
+    inc r14                     ; skip first byte (used for length)
+    xor r15, r15                ; r15 holds length
+.first_non_blank:
+    call read_char
+    cmp al, START_COMMENT_CHAR  ; start of a comment?
+    je .skip_comment            ; if so, skip the comment
 
-.read_first_char:
-    ; Read next character from stdin,
-    ; and the store result in rax.
-    push rdi
-    call readc
-    pop rdi
-
-    ; Skip this character if it is one
-    ; of the whitespace characters.
-    cmp al, SP_CHAR_CODE
-    je .read_first_char
-    cmp al, NL_CHAR_CODE
-    je .read_first_char
-    cmp al, CR_CHAR_CODE
-    je .read_first_char
-    cmp al, HT_CHAR_CODE
-    je .read_first_char
-
-    ; If we reach the end of input stream,
-    ; goto .end
-    test al, al
-    jz .end
-
+    cmp al, SP_CHAR             ; is it a blank?
+    jbe .first_non_blank        ; if so, keep looking
 .loop:
-    ; store previously read character
-    ; at desired index.
-    mov byte [rdi + r14], al
-    inc r14
+    mov [r14 + r15], al         ; write char at the designed index
+    inc r15                     ; advance index
 
-    ; Read next character
-    push rdi
-    call readc
-    pop rdi
+    call read_char              ; read next char
+    cmp al, SP_CHAR             ; is it a blank?
+    jbe .end                    ; if so, we're done.
 
-    ; If it is one of the whitespace characters,
-    ; break out of the loop, and goto .end
-    cmp al, SP_CHAR_CODE
-    je .end
-    cmp al, NL_CHAR_CODE
-    je .end
-    cmp al, CR_CHAR_CODE
-    je .end
-    cmp al, HT_CHAR_CODE
-    je .end
+    cmp r15, MAX_WORD_LENGTH    ; overflow?
+    je .overflow                ; if so, we're in trouble!
+    jmp .loop                   ; NOTA? keep looping
+.skip_comment:
+    call read_char
+    cmp al, NL_CHAR             ; end of line yet?
+    jne .skip_comment           ; not yet!
+    jmp .first_non_blank
+.end:
+    dec r14                     ; back to length's address
+    mov [r14], r15b             ; write length
+    mov rax, r14                ; return value
 
-    ; If the end of input stream occurs,
-    ; break out of the loop, and goto .end
-    test al, al
-    jz .end
-
-    ; al is a `normal` character but we
-    ; have just reached the maximum number
-    ; of characters allowed. If this is
-    ; the case, goto .error
-    cmp r14, r15
-    je .error
-
-    ; Otherwise, loop back.
-    jmp .loop
-
-.error:
-    xor rax, rax
+    ; Restore callee-saved registers
     pop r15
     pop r14
     ret
-
-.end:
-    ; write null-terminator
-    mov byte [rdi + r14], 0
-
-    ; return values
-    mov rax, rdi
-    mov rdx, r14
-
-    ; restore callee-saved registers
+.overflow:
+    xor rax, rax
     pop r15
     pop r14
-
-    ret
-
-;; gets(rdi, rsi) -> (rax, rdx).
-;;
-;; Arguments
-;; ---------
-;; rdi: buffer's address.
-;; rsi: buffer's size.
-;;
-;; Description
-;; -----------
-;; Reads at most one less than the number of characters specified by size
-;; (stored in rsi) from stdin and stores them in the destination buffer
-;; whose address is stored in rdi. Reading stops when either a newline
-;; character or a carriage return character is found, at end-of-file or
-;; error. The newline character or carriage return character, if any, is not
-;; retained.
-; gets:
-;     ; r14 will store the index into the buffer of the next character, and
-;     ; r15 will store the maximum number of characters allowed (equals to
-;     ; buffer's size - 1).
-;     push r14
-;     push r15
-
-;     ; Initializes index and maximum number of characters allowed.
-;     xor r14, r14
-;     mov r15, rsi
-;     dec r15
-
-;     ; If maximum number of characters allowed is 0, there is nothing
-;     ; to do. (this only happens if buffer' size is 1).
-;     test r15, r15
-;     jz .error
-
-; .first_char:
-;     ; Reads first character from stdin and stores it in rax.
-;     push rdi
-;     readc
-;     pop rdi
-
-;     ; If the first character happens to be a newline, a carriage return
-;     ; character or end-of-file, stop the reading.
-;     cmp al, NL_CHAR_CODE
-;     je .end
-;     cmp al, CR_CHAR_CODE
-;     je .end
-;     test al, al
-;     jz .end
-
-; .loop:
-;     ; Stores the previously read character at the desired index.
-;     mov byte [rdi + r14], al
-;     inc r14
-
-;     ; Reads next character.
-;     push rdi
-;     readc
-;     pop rdi
-
-;     ; If this character happens to be a newline, a carriage return
-;     ; character or end-of-file, stop the reading.
-;     cmp al, NL_CHAR_CODE
-;     je .end
-;     cmp al, CR_CHAR_CODE
-;     je .end
-;     test al, al
-;     jz .end
-
-;     ; This is a `normal` character but we have just reached the maximum
-;     ; number of characters allowed. If this is the case, goto .error
-;     cmp r14, r15
-;     je .error
-
-;     ; Otherwise, loop back.
-;     jmp .loop
-
-; .error:
-;     xor rax, rax
-;     pop r15
-;     pop r14
-;     ret
-
-; .end:
-;     ; Appends the null-terminator.
-;     mov byte [rdi + r14], 0
-
-;     ; Returns values.
-;     mov rax, rdi
-;     mov rdx, r14
-
-;     ; Restores callee-saved registers.
-;     pop r15
-;     pop r14
-
-;     ret
-
-
-;; parseu(rdi) -> (rax, rdx).
-;;
-;; Arguments
-;; ---------
-;; rdi: a pointer to a null-terminated string. The input string must starts
-;; with a digit character (0-9).
-;;
-;; Description
-;; -----------
-;; Parses an unsigned (8-byte) integer from the start of the given
-;; null-terminated string, and returns the parsed number in rax and its
-;; digits count in rdx.
-;; Note that if your input string is something like '0123', the integer in
-;; rax will be 123, and rdx will be 4. (FIXME)
-parseu:
-    ; The final number will be stored
-    ; in rax. rcx is used to keep track
-    ; of digits count.
-    xor rax, rax
-    xor rcx, rcx
-
-    ; Each time a next digit is read,
-    ; we update rax as follows:
-    ; rax = rax * 10 + `that next digit`.
-    mov r8, 10
-
-.loop:
-    ; read next digit, we have to
-    ; `move zero-extended` here.
-    movzx r9, byte [rdi + rcx]
-
-    ; since the byte range for digit
-    ; 0-9 is 0x30-0x39 (see man ascii),
-    ; if this digit is bellow or above this
-    ; range, goto .end
-    cmp r9b, 0x30
-    jb .end
-    cmp r9b, 0x39
-    ja .end
-
-    ; Before updating rax with this
-    ; new digit, we need to convert
-    ; it to the byte value which
-    ; evaluates to the digit itself.
-    and r9b, 0x0f
-
-    ; update rax with new digit
-    ; rax = rax * 10 + r9b
-    mul r8
-    add rax, r9
-
-    ; increment digits count, and
-    ; loop back.
-    inc rcx
-    jmp .loop
-
-.end:
-    mov rdx, rcx
-    ret
-
-;; parsei(rdi) -> (rax, rdx).
-;;
-;; Arguments
-;; ---------
-;; rdi: a pointer to a null-terminated string. The input string must
-;;      starts with an digit (0-9) or one of these characters ('+', '-')
-;;      immediately followed by a digit (spaces between aren't allowed).
-;;
-;; Description
-;; -----------
-;; Parses an 8-byte, signed integer from the start of the specified input
-;; string, and returns the parsed number in rax; its digits count
-;; (plus 1 for the minus sign if any) in rdx.
-;;
-;; See parseu for more details.
-parsei:
-    ; Read first character
-    mov al, byte [rdi]
-
-    ; Is it '-'?
-    cmp al, '-'
-    jz .signed
-
-    ; Is it '+'?
-    cmp al, '+'
-    jz .unsigned
-
-    ; If the first character is neither
-    ; '+' nor '-', hand over to `parseu`.
-    jmp parseu
-
-.signed:
-    inc rdi
-    call parseu
-
-    test rdx, rdx
-    jz .error
-
-    neg rax
-    inc rdx
-    ret
-.unsigned:
-    ; we don't count the plus sign '+'.
-    inc rdi
-    jmp parseu
-
-.error:
-    xor rax, rax
-    ret
-
-;; strequ(rdi, rsi) -> rax (either 0 or 1).
-;;
-;; Arguments
-;; ---------
-;; rdi: a pointer to a null-terminated string.
-;; rsi: a pointer to a null-terminated string.
-;;
-;; Description
-;; -----------
-;; Takes as inputs two pointers to two null-terminated strings, compares
-;; them (character by character), and returns 1 if they are equal,
-;; otherwise returns 0.
-;;
-;; Two null-terminated strings are considered equal if and only if they
-;; are of the same length (having exactly the same number of characters),
-;; and the corresponding characters are identical.
-strequ:
-    ; Compare next two characters, and
-    ; if they're not equal, go to .no
-    mov al, byte [rdi]
-    cmp al, byte [rsi]
-    jne .no
-
-    ; They are both equal to null-terminator,
-    ; go to .yes
-    test al, al
-    jz .yes
-
-    ; Otherwise, advance two pointers
-    ; and loop back.
-    inc rdi
-    inc rsi
-    jmp strequ
-
-.yes:
-    mov rax, 1
-    ret
-
-.no:
-    xor rax, rax
     ret
 
 ;; tolower(rdi) -> rax.
@@ -615,130 +408,151 @@ tolower:
     mov rax, rdi
     ret
 
-;; istrequ(rdi, rsi) -> rax
+;; char_case_cmp(rdi, rsi, rdx) -> rax (0 or 1).
 ;;
-;; Arguments
-;; ---------
-;; rdi: a pointer to a null-terminated string.
-;; rsi: a pointer to a null-terminated string.
-;;
-;; Description
-;; -----------
-;; Similar to `strequ` but case-insensitive.
-istrequ:
+;; Compares character string rdi against character string rsi without
+;; sensitivity to case. Both strings are assumed to be rdx bytes long.
+;; Returns 1 if they are equal, 0 otherwise.
+char_case_cmp:
+    test rdx, rdx
+    jz .equal
+
+    push rdx
     push rdi
     push rsi
 
-    ; Converts the next character of the first string to lowercase, and
-    ; pushes onto the stack.
     movzx rdi, byte [rdi]
     call tolower
-    push rax
+    mov r12, rax
 
-    ; Converts the next character of the second string to lowercase, and
-    ; compares it with the corresponding lowercase character of the first
-    ; string.
-    movzx rdi, byte [rsi]
+    mov rdi, [rsp]
+    movzx rdi, byte [rdi]
     call tolower
-    cmp al, byte [rsp]
-    jne .no
 
-    ; two characters are equal and they are both equal to null-terminator
-    test al, al
-    jz .yes
-
-    ; Otherwise, restore stack
-    add rsp, 8
     pop rsi
     pop rdi
+    pop rdx
 
-    ; and loop back
+    cmp r12, rax
+    jne .not_equal
+
     inc rdi
     inc rsi
-    jmp istrequ
-
-.yes:
-    add rsp, 24
+    dec rdx
+    jmp char_case_cmp
+.equal:
     mov rax, 1
     ret
-
-.no:
-    add rsp, 24
+.not_equal:
     xor rax, rax
     ret
 
-;; strcpy(rdi, rsi, rdx) -> rax.
+;; char_copy(rdi, rsi, rdx) -> void.
 ;;
-;; Arguments
-;; ---------
-;; rdi: a pointer to a null-terminated string.
-;; rsi: buffer address.
-;; rdx: buffer size.
-;;
-;; Description
-;; -----------
-;; Takes as inputs a pointer to a null-terminated string, a buffer address,
-;; and a buffer size, copies the string into the buffer, and returns the
-;; buffer address in rax.
-;; If the given string is too long for the specified buffer, 0 is returned
-;; instead.
-strcpy:
-    ; rcx will hold the index into the
-    ; buffer of the next character, rdx
-    ; is the maximum number of characters
-    ; allowed (exclude null-terminator).
-    xor rcx, rcx
-    dec rdx
-
-.loop:
-    ; Read next character from the source string,
-    ; and if it is a null-terminator, go to .end
-    mov al, byte [rdi + rcx]
-    test al, al
+;; Copies rdx bytes (characters) from the memory location designated by rsi
+;; (source) to the memory location designated by rdi (destination) assuming
+;; that source and destination do not overlap.
+char_copy:
+    test rdx, rdx
     jz .end
 
-    ; Maximum number of characters has been reached,
-    ; but next character is not a null-terminator,
-    ; go to .error
-    cmp rcx, rdx
-    je .error
+    mov al, [rsi]
+    mov [rdi], al
 
-    ; Otherwise, write next character into the
-    ; destination, advance index, and loop back.
-    mov [rsi + rcx], al
-    inc rcx
-    jmp .loop
-
-.error:
-    xor rax, rax
-    ret
-
+    inc rdi
+    inc rsi
+    dec rdx
+    jmp char_copy
 .end:
-    mov byte [rsi + rcx], 0
-    mov rax, rsi
     ret
 
-;; exit(rdi) -> noreturn
+;; Common Code Field routine for all colon words.
 ;;
-;; Arguments
-;; ---------
-;; rdi: the exit status code.
+;;     <--- Header ---><-- Code Field --><------- Paramater Field ------>
+;;     +---------------+-----------------+-----------------------+------+
+;;     | xxxxxxxxxxxxx |     DOCOL       | xxxxxxxxxxxxxxxxxxxxx | EXIT |
+;;     +---------------+-----------------+-----------------------+------+
+;;                     ^
+;;                     w
+;;   ---------+--------|--------+-----------------
+;;   ........ | SOME-COLON-WORD | ................  (a thread)
+;;   ---------+-----------------+-----------------
+;;            ^                 ^
+;;            |                 |
+;;            pc(1)             pc(2)
 ;;
-;; Description
+;; Let's say we encounter a colon word named SOME-COLON-WORD during the
+;; process of executing some other word. Before `next`, our pc is at pc(1).
+;; After `next`, our pc is at pc(2) and our w is the Code Field Address
+;; of SOME-COLON-WORD. The last instruction of `next`, which is `jmp [w]`,
+;; is exactly the same as `jmp DOCOL`. And here this what DOCOL does:
+;;
+;;   a. Pushes the current pc(2) onto the return stack, so that the
+;;      interpeter knows where to go next when SOME-COLON-WORD is done
+;;      (typically EXIT will pop this pc and pass the control back to
+;;       the interpeter via `next`).
+;;
+;;   b. Sets w to point to SOME-COLON-WORD's Paramater Field
+;;
+;;   c. Sets pc to this new w and passes control back to the interpeter.
+DOCOL:
+    rpush pc
+    add w, 8
+    mov pc, w
+    next
+
+;; The default Code Field routine for all words created using `CREATE`.
+;;
+;;   +----------+---+---+---+---+---+-----+----------+------------
+;;   |   LINK   | 0 | 3 | F | O | O | ... |  DOVAR   | ...........
+;;   +----------+---+---+---+---+---+-----+----8-----+------------
+;;                                        ^          ^
+;;                                        |          |
+;;                                       CFA        PFA (DFA)
+;;
+;; What DOVAR does is very simple: it pushes the address of the word's
+;; Paramater Field (a.k.a Data Field) onto the data stack.
+DOVAR:
+    lea rax, riprel(w + 8)      ; Paramater Field Address, w = CFA
+    push rax
+    next
+
+section .bss
+
+;; Input Buffer
+;; ------------
+;; Stores a sequence of characters from the input source (stdin, file, etc..)
+;; that is currently accessible to a program.
+alignb INPUT_BUFFER_SIZE
+input_buffer: resb INPUT_BUFFER_SIZE
+
+;; Word Buffer
 ;; -----------
-;; Terminates the current process with the given exit status code
-;; (given in rdi).
-exit:
-    mov rax, SYSCALL_EXIT
-    syscall
+;; This buffer is used to store the counted string returned by read_word.
+;; Subsequent calls overwrite this buffer.
+;;
+;; What the heck is a "counted-string"?
+;;
+;;     <-- 1 byte -->
+;;     +------------+--------------......--------------+
+;;     |     LEN    |            CHARACTERS            |
+;;     +------------+--------------......--------------+
+;;     ^
+;;     |
+;; word_buffer
+alignb WORD_BUFFER_SIZE
+word_buffer: resb WORD_BUFFER_SIZE
 
-section .rodata
+section .data
+align 8
 
-;; \e[0m
-ansi_reset: db 27,91,'0m',0
+;; Stores the offset in characters from the start of the input buffer to
+;; the start of the parse area.
+;; The corresponding word is >IN.
+input_buffer_offset: dq 0
 
-;; ANSI red foreground
-ansi_fg_red: db 27,91,'31m',0
-
-;; ANSI green foreground
-ansi_fg_green: db 27,91,'32m',0
+;; Stores the current number of characters in the input buffer.
+;; No corresponding word for this variable. It is here together with
+;; `to_in` and `input_buffer` to help in the implementation of words,
+;; such as SOURCE, KEY, etc...
+input_buffer_length: dq 0
