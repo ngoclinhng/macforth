@@ -272,6 +272,19 @@ def create_test():
 
     return (tcount, fcount)
 
+def type_test():
+    (tcount, fcount) = (0, 0)
+
+    strings = ['', '1', 'a', 'A', 'foo', 'FOO', 'Hello, World!']
+
+    for s in strings:
+        tcount += 1
+        checker = expect(stdout=s, status=len(s))
+        args = [repr(s)]
+        fcount += test_case('TYPE_test', checker=checker, args= args)
+
+    return (tcount, fcount)
+
 TEST_SUITES = {
     'init': init_test,
     'key': key_test,
@@ -283,7 +296,8 @@ TEST_SUITES = {
     'find_name': find_name_test,
     'execute': execute_test,
     'latest': latest_test,
-    'create': create_test
+    'create': create_test,
+    'type': type_test
 }
 
 def print_summary(summary):

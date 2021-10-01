@@ -169,6 +169,15 @@ native "EMIT", 4, EMIT
     call print_char
     next
 
+;; ( c-addr u -- )
+;; Prints the character string specified by `c-addr` (address) and `u`
+;; (length) to stdout.
+native "TYPE", 4, TYPE
+    pop rsi                     ; length
+    pop rdi                     ; address
+    call print_counted_string
+    next
+
 ;; ( u -- )
 ;; Converts the unsigned integer at TOS using the value stored at base
 ;; as the radix for conversion, and prints the result out to stdout.
