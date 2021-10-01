@@ -7,7 +7,7 @@ global _main
 native "FOO", 3, FOO
     lea rdi, riprel(message)
     mov rsi, length
-    call print_counted_string
+    call print_char_string
     next
 
 native "PUSH-FOO", 8, PUSH_FOO

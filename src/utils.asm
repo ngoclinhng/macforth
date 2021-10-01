@@ -5,7 +5,7 @@
 
 global string_length
 global print_string
-global print_counted_string
+global print_char_string
 global print_char
 global print_uint
 global print_int
@@ -65,7 +65,7 @@ print_string:
 
     ret
 
-;; print_counted_string(rdi, rsi) -> stdout.
+;; print_char_string(rdi, rsi) -> stdout.
 ;;
 ;; Arguments
 ;; ---------
@@ -76,7 +76,7 @@ print_string:
 ;; -----------
 ;; Takes as arguments an address of a string and its character count, and
 ;; prints it out to stdout.
-print_counted_string:
+print_char_string:
     mov rdx, rsi                ; number of bytes
     mov rsi, rdi                ; source
     mov rax, SYSCALL_WRITE      ; write syscall

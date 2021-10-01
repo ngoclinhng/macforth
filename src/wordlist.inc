@@ -175,7 +175,7 @@ native "EMIT", 4, EMIT
 native "TYPE", 4, TYPE
     pop rsi                     ; length
     pop rdi                     ; address
-    call print_counted_string
+    call print_char_string
     next
 
 ;; ( u -- )

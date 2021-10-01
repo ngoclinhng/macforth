@@ -69,7 +69,7 @@ native "CHECK-NAME", 10, CHECK_NAME
     mov rsi, ARG0               ; name's length
 
     push rdi
-    call print_counted_string
+    call print_char_string
     pop rdi
 
     add rdi, ARG0

@@ -3,7 +3,7 @@
 
 extern string_length
 extern print_string
-extern print_counted_string
+extern print_char_string
 extern print_char
 extern print_uint
 extern print_int
