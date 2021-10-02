@@ -3,16 +3,16 @@
 ;; Export symbols
 ;; ---------------
 
-global string_length
+global cstring_length
+global print_cstring
 global print_string
-global print_char_string
 global print_char
 global print_uint
 global print_int
 global read_char
 global parse_name
-global char_case_cmp
-global char_copy
+global string_case_compare
+global string_copy
 
 global DOCOL
 global DOVAR
@@ -23,7 +23,7 @@ global input_buffer_length
 
 section .text
 
-;; string_length(rdi) -> rax.
+;; cstring_length(rdi) -> rax.
 ;;
 ;; Arguments
 ;; ---------
@@ -33,7 +33,7 @@ section .text
 ;; -----------
 ;; Takes as argument a pointer to a null-terminated string, computes its
 ;; length, and returns the result in rax.
-string_length:
+cstring_length:
     xor rax, rax
 .loop:
     cmp byte [rdi + rax], 0     ; Is next character a null-terminator?
@@ -43,7 +43,7 @@ string_length:
 .end:
     ret
 
-;; print_string(rdi) -> stdout.
+;; print_cstring(rdi) -> stdout.
 ;;
 ;; Arguments
 ;; ---------
@@ -53,9 +53,9 @@ string_length:
 ;; -----------
 ;; Takes as argument a pointer to a null-terminated string, and outputs it
 ;; to stdout.
-print_string:
+print_cstring:
     push rdi
-    call string_length
+    call cstring_length
     pop rsi                     ; source
     mov rdx, rax                ; num bytes to be written
 
@@ -65,7 +65,7 @@ print_string:
 
     ret
 
-;; print_char_string(rdi, rsi) -> stdout.
+;; print_string(rdi, rsi) -> stdout.
 ;;
 ;; Arguments
 ;; ---------
@@ -76,7 +76,7 @@ print_string:
 ;; -----------
 ;; Takes as arguments an address of a string and its character count, and
 ;; prints it out to stdout.
-print_char_string:
+print_string:
     mov rdx, rsi                ; number of bytes
     mov rsi, rdi                ; source
     mov rax, SYSCALL_WRITE      ; write syscall
@@ -121,7 +121,7 @@ print_char:
 ;; Description
 ;; -----------
 ;; Converts the unsgined integer to base (hex, decimal, binary, etc...),
-;; and print_string it out to stdout.
+;; and print_cstring it out to stdout.
 ;;
 ;; Rule of conversion:
 ;;
@@ -204,7 +204,7 @@ print_uint:
     sub rdi, 2
     mov word [rdi], 0x6f30
 .end:
-    call print_string           ; Print digits string to stdout
+    call print_cstring           ; Print digits string to stdout
     add rsp, 72                 ; Restore rsp
     ret
 
@@ -408,12 +408,12 @@ tolower:
     mov rax, rdi
     ret
 
-;; char_case_cmp(rdi, rsi, rdx) -> rax (0 or 1).
+;; string_case_compare(rdi, rsi, rdx) -> rax (0 or 1).
 ;;
 ;; Compares character string rdi against character string rsi without
 ;; sensitivity to case. Both strings are assumed to be rdx bytes long.
 ;; Returns 1 if they are equal, 0 otherwise.
-char_case_cmp:
+string_case_compare:
     test rdx, rdx
     jz .equal
 
@@ -439,7 +439,7 @@ char_case_cmp:
     inc rdi
     inc rsi
     dec rdx
-    jmp char_case_cmp
+    jmp string_case_compare
 .equal:
     mov rax, 1
     ret
@@ -447,12 +447,12 @@ char_case_cmp:
     xor rax, rax
     ret
 
-;; char_copy(rdi, rsi, rdx) -> void.
+;; string_copy(rdi, rsi, rdx) -> void.
 ;;
 ;; Copies rdx bytes (characters) from the memory location designated by rsi
 ;; (source) to the memory location designated by rdi (destination) assuming
 ;; that source and destination do not overlap.
-char_copy:
+string_copy:
     test rdx, rdx
     jz .end
 
@@ -462,7 +462,7 @@ char_copy:
     inc rdi
     inc rsi
     dec rdx
-    jmp char_copy
+    jmp string_copy
 .end:
     ret
 

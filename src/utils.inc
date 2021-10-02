@@ -1,16 +1,16 @@
 %ifndef MACFORTH_UTILS_INC_
 %define MACFORTH_UTILS_INC_
 
-extern string_length
+extern cstring_length
+extern print_cstring
 extern print_string
-extern print_char_string
 extern print_char
 extern print_uint
 extern print_int
 extern read_char
 extern parse_name
-extern char_case_cmp
-extern char_copy
+extern string_case_compare
+extern string_copy
 
 extern DOCOL
 extern DOVAR

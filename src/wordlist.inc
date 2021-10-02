@@ -19,6 +19,58 @@ native "PARSE-NAME", 10, PARSE_NAME
     push rdx
     next
 
+;; ( c-addr u - n f)
+;; Convert the string specified by `c-addr` (address) and `u` (length)
+;; into an 8-byte integer `n`. If the conversion fails, the flag `f` is
+;; set to 0 (all bits are 0), otherwise it is set to -1 (all bits are 1).
+;;
+;; The conversion algorithm (assuming positive number for simplicity) is as
+;; follow:
+;;
+;;   a. n is initialized to the decimal 0.
+;;
+;;   b. For the next character c in the input string:
+;;
+;;      - Convert c into the corresponding decimal value d with respect to
+;;        BASE. For example, if BASE is 16 and c is the character 'A', its
+;;        decimal value would be 10. If this conversion fails, the algorithm
+;;        stops and sets the flag f to 0.
+;;
+;;      - Update n: n <- n * BASE + d.
+;;
+;;      - End of the input string yet? If not, go back to step b, otherwise
+;;        set the flag to -1 (all bits are 1) and terminate.
+;;
+;; IMPORTANT NOTE:
+;; --------------
+;;   1. If BASE is 2 (binary), the input string is expected to be prefixed
+;;      with either '0b' (for positive number) or '-0b' (for negative
+;;      number). For example: 0b1010(10), -0b1010(-10).
+;;
+;;   2. If BASE is 8 (octal), the input string is expected to be prefixed
+;;      with either '0o' (for positive number) or '-0o' (for negative
+;;      number). For example: 0o012(10), -0o012(-10).
+;;
+;;   3. If BASE is 10 (decimal) and the input string is prefixed with the
+;;      minus sign '-', the result of the conversion would be a negative
+;;      (8-byte) integer.
+;;
+;;   4. If BASE is 16 (hexadecimal), the input string is expected to be
+;;      prefixed with either '0x' (for positive number) or '-0x' (for
+;;      negative number). For example: '0xa'(10), '0xA'(10), '-0xa'(-10),
+;;      '-0xA'(-10).
+;;
+;;   5. Other BASEs are not yet supported!
+native "S>NUMBER?", 9, STRING_TO_NUMBER?
+    ; pop rsi                     ; length
+    ; pop rdi                     ; address
+    ; mov rdx, riprel(BASE)       ; base
+    ; call char_string_to_int
+
+    ; push rax                    ; number
+    ; push rdx                    ; flag
+    next
+
 ;; ( "<spaces>name<space>" -- )
 ;; Skip leading spaces. Parse `name` delimited by a space. Create new word
 ;; for `name` and append it to the wordlist.
@@ -68,7 +120,7 @@ native "CREATE", 6, CREATE
     inc rdi                     ; address of Name Field
     push rdi
     push rdx
-    call char_copy              ; copy name (rdi=dst, rsi=src, rdx=len)
+    call string_copy            ; copy name (rdi=dst, rsi=src, rdx=len)
     pop rdx
     pop rdi
 
@@ -117,7 +169,7 @@ native "FIND-NAME", 9, FIND_NAME
     inc rsi                     ; Name Field Address
 
     push rdx                    ; save character count
-    call char_case_cmp          ; compare two strings (rdi, rsi, rdx)
+    call string_case_compare    ; compare two strings (rdi, rsi, rdx)
     pop rdx                     ; restore character count
 
     test rax, rax               ; are they equal?
@@ -175,7 +227,7 @@ native "EMIT", 4, EMIT
 native "TYPE", 4, TYPE
     pop rsi                     ; length
     pop rdi                     ; address
-    call print_char_string
+    call print_string
     next
 
 ;; ( u -- )

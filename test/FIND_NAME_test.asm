@@ -30,17 +30,17 @@ native "CHAO", 4, CHAO
     jne .error
 
     lea rdi, riprel(found_msg)
-    call print_string
+    call print_cstring
 %endif
 
     jmp .check_stack
 .not_found:
     lea rdi, riprel(not_found_msg)
-    call print_string
+    call print_cstring
     jmp .check_stack
 .error:
     lea rdi, riprel(error_msg)
-    call print_string
+    call print_cstring
     jmp .check_stack
 .check_stack:
     mov rdi, -1                 ; -1 means stack error

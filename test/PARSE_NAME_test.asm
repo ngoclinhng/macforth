@@ -9,7 +9,7 @@ native "CHAO", 4, CHAO
     pop rdi
 
     push rsi
-    call print_char_string
+    call print_string
     pop rdi
 
     mov rax, riprel(stack_base)
