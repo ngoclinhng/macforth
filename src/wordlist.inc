@@ -215,6 +215,18 @@ native ">CFA", 4, TO_CFA
     push rsi
     jmp next
 
+;; Enter interpretation state (i.e., set the variable STATE to 0).
+;; This is an IMMEDIATE word.
+native "[", 1, LBRACKET, F_IMMEDIATE
+    mov qword riprel(state), 0
+    next
+
+;; Enter compilation state (i.e., set the variable STATE to 1).
+;; This is an IMMEDIATE word.
+native "]", 1, RBRACKET, F_IMMEDIATE
+    mov qword riprel(state), 1
+    next
+
 ;; ( char -- )
 ;; Writes 1 byte to stdout. If TOS is not a single character code,
 ;; its lowest byte will be printed out instead.
