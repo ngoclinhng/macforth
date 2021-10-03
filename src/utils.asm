@@ -13,6 +13,7 @@ global read_char
 global parse_name
 global string_case_compare
 global string_copy
+global string_to_int
 
 global DOCOL
 global DOVAR
@@ -321,6 +322,232 @@ parse_name:
     mov rdx, r15
     pop r15
     pop r14
+    ret
+
+;; bin_to_uint(rdi, rsi) -> (rax, rdx)
+;; Convert the binary string specified by rdi (address) and length (rsi)
+;; into an 8-byte unsigned integer (stored in rax). If the convertion
+;; succeeds rdx will be -1, otherwise it'll be 0.
+;; A valid input string must be prefixed with '0b', for example 0b1010(10).
+bin_to_uint:
+    xor rax, rax                ; will hold the final result
+
+    cmp rsi, 2                  ; is length > 2 ?
+    jle .error                  ; if not, input string is invalid
+
+    cmp word [rdi], 0x6230      ; starts with '0b' ?
+    jne .error                  ; if not, input string is also invalid
+
+    add rdi, 2
+    sub rsi, 2
+    mov r8, 2                   ; binary radix
+.loop:
+    test rsi, rsi               ; end of string yet?
+    jz .end
+
+    movzx r9, byte [rdi]        ; read next character
+
+    cmp r9b, '0'                ; since this is a binary string, we would
+    jb .error                   ; expect its characters to be either '0'
+    cmp r9b, '1'                ; or '1'. If one character lies outside of
+    ja .error                   ; this range, it is invalid.
+
+    and r9b, 0x0f               ; convert to the corresponding decimal
+
+    xor rdx, rdx                ; multiple rax by r8 and store the result
+    mul r8                      ; in rax (ignore overflow in rdx)
+    add rax, r9                 ; add digit to rax
+
+    inc rdi                     ; advance to next char
+    dec rsi                     ; decrement remaining
+    jmp .loop
+.error:
+    xor rdx, rdx                ; 0 flag indicates error
+    ret
+.end:
+    mov rdx, -1                 ; -1 flag indicates success
+    ret
+
+;; oct_to_uint(rdi, rsi) -> (rax, rdx)
+;; Convert the octal string specified by rdi (address) and length (rsi)
+;; into an 8-byte unsigned integer (stored in rax). If the convertion
+;; succeeds rdx will be -1, otherwise it'll be 0.
+;; A valid input string must be prefixed with '0o', for example 0o012(10).
+oct_to_uint:
+    xor rax, rax                ; will hold the result
+
+    cmp rsi, 2                  ; is length > 2 ?
+    jle .error                  ; if not, input string is invalid
+
+    cmp word [rdi], 0x6f30      ; starts with '0o'?
+    jne .error                  ; if not, input string is also invalid
+
+    add rdi, 2
+    sub rsi, 2
+    mov r8, 8                   ; octal radix
+.loop:
+    test rsi, rsi               ; end of the input string yet?
+    jz .end
+
+    movzx r9, byte [rdi]        ; read next character
+
+    cmp r9b, '0'                ; since this is an octal string, we would
+    jb .error                   ; expect all of its characters to be in
+    cmp r9b, '7'                ; the range '0' - '7'. If one lies outside
+    ja .error                   ; of this range, it is invalid.
+
+    and r9b, 0x0f               ; convert char to the corresponding decimal
+
+    xor rdx, rdx                ; multiply rax by r8, and store the result
+    mul r8                      ; in rax (ignore overflow)
+    add rax, r9                 ; add digit to rax
+
+    inc rdi                     ; advance to next char
+    dec rsi                     ; decrement remaining
+    jmp .loop
+.error:
+    xor rdx, rdx
+    ret
+.end:
+    mov rdx, -1
+    ret
+
+;; dec_to_uint(rdi, rsi) -> (rax, rdx)
+;; Convert the decimal string specified by rdi (address) and length (rsi)
+;; into an 8-byte unsigned integer (stored in rax). If the convertion
+;; succeeds rdx will be -1, otherwise it'll be 0.
+dec_to_uint:
+    xor rax, rax                ; will hold the final result
+    mov r8, 10                  ; decimal radix
+.loop:
+    test rsi, rsi
+    jz .end
+
+    movzx r9, byte [rdi]        ; read next char
+
+    cmp r9b, '0'                ; since this is a decimal string, we would
+    jb .error                   ; expect all of its characters to be in the
+    cmp r9b, '9'                ; range '0' - '9'. If one lies outside of
+    ja .error                   ; this range, it is invalid.
+
+    and r9b, 0x0f               ; convert to corresponding decimal value
+
+    xor rdx, rdx                ; multiply rax by r8, and store the result
+    mul r8                      ; in rax (ignore overflow in rdx)
+    add rax, r9                 ; add digit to rax
+
+    inc rdi                     ; advance to next char
+    dec rsi                     ; decrement remaining
+    jmp .loop
+.error:
+    xor rdx, rdx
+    ret
+.end:
+    mov rdx, -1
+    ret
+
+;; hex_to_uint(rdi, rsi) -> (rax, rdx)
+;; Convert the hexadecimal string specified by rdi (address) and length(rsi)
+;; into an 8-byte unsigned integer (stored in rax). If the convertion
+;; succeeds rdx will be -1, otherwise 0.
+;; A valid input string must be prefixed with '0x', for example 0xA(10).
+hex_to_uint:
+    xor rax, rax                ; will hold the final result
+
+    cmp rsi, 2                  ; is length > 2 ?
+    jle .error                  ; if not, input string is invalid
+
+    cmp word [rdi], 0x7830      ; starts with '0x'?
+    jne .error                  ; if not, input string is also invalid
+
+    add rdi, 2                  ; go past the '0x' prefix
+    sub rsi, 2                  ; remaining count
+    mov r8, 16                  ; hexadecimal radix
+.loop:
+    test rsi, rsi               ; end of input string yet?
+    jz .end                     ; if so, go to .end
+
+    movzx r9, byte [rdi]        ; read next char
+
+    cmp r9b, '0'                ; is next char below '0'?
+    jb .error                   ; if so, it is invalid
+    cmp r9b, '9'                ; is it below or equal '9'?
+    jbe .A                      ; is so char is in the range '0' - '9'
+
+    cmp r9b, 'A',               ; is char below 'A'?
+    jb .error                   ; if so, it is invalid
+    cmp r9b, 'F'                ; is it below or equal 'F'?
+    jbe .B                      ; if so, it's in the range 'A' - 'F'.
+
+    cmp r9b, 'a'                ; if char below 'a'
+    jb .error                   ; if so, it is invalid
+    cmp r9b, 'f'                ; is it above 'f'
+    ja .error                   ; if so, it is also invalid
+
+    sub r9b, 32                 ; convert to the corresponding uppercase
+    jmp .B                      ; letter, and go to .B
+.A:
+    and r9b, 0x0f               ; convert to corresponding decimal value
+    jmp .continue
+.B:
+    and r9b, 0x0f               ; convert to corresponding
+    add r9b, 9                  ; decimal value (TODO: two instructions?)
+.continue:
+    xor rdx, rdx                ; multiple rax by r8 and store the result
+    mul r8                      ; in rax (ignore overflow in rdx)
+    add rax, r9                 ; add digit to rax
+
+    inc rdi                     ; advance to next char
+    dec rsi                     ; decrement remaining
+    jmp .loop
+.error:
+    xor rdx, rdx
+    ret
+.end:
+    mov rdx, -1
+    ret
+
+;; string_to_uint(rdi, rsi, rdx) -> (rax, rdx).
+;; Convert the string specified by rdi (address) and rsi (length) into
+;; an 8-byte unsigned integer (rax), using the value in rdx as the radix
+;; for conversion. If the conversion succeeds, the flag rdx is set to -1,
+;; otherwise rdx will be 0.
+string_to_uint:
+    cmp rdx, 2                  ; is binary?
+    je bin_to_uint
+
+    cmp rdx, 8                  ; is octal?
+    je oct_to_uint
+
+    cmp rdx, 10                 ; is decimal?
+    je dec_to_uint
+
+    cmp rdx, 16                 ; is hexadecimal?
+    je hex_to_uint
+
+    ; None of the above
+    xor rax, rax
+    xor rdx, rdx
+    ret
+
+;; string_to_int(rdi, rsi, rdx) -> (rax, rdx).
+;; Convert the string specified by rdi (address) and rsi (length) into
+;; an 8-byte integer (rax), using the value in rdx as the radix for
+;; conversion. If the conversion fails, the flag rdx is set to 0, otherwise
+;; -1.
+string_to_int:
+    mov al, byte [rdi]
+    cmp al, '-'
+    je .signed
+    jmp string_to_uint
+.signed:
+    inc rdi
+    dec rsi
+    call string_to_uint
+    test rdx, rdx
+    jz .error
+    neg rax
+.error:
     ret
 
 ;; read_word(stdin) -> rax.

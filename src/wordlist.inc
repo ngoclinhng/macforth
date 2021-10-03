@@ -19,7 +19,7 @@ native "PARSE-NAME", 10, PARSE_NAME
     push rdx
     next
 
-;; ( c-addr u - n f)
+;; ( c-addr u - n f )
 ;; Convert the string specified by `c-addr` (address) and `u` (length)
 ;; into an 8-byte integer `n`. If the conversion fails, the flag `f` is
 ;; set to 0 (all bits are 0), otherwise it is set to -1 (all bits are 1).
@@ -61,14 +61,16 @@ native "PARSE-NAME", 10, PARSE_NAME
 ;;      '-0xA'(-10).
 ;;
 ;;   5. Other BASEs are not yet supported!
-native "S>NUMBER?", 9, STRING_TO_NUMBER?
-    ; pop rsi                     ; length
-    ; pop rdi                     ; address
-    ; mov rdx, riprel(BASE)       ; base
-    ; call char_string_to_int
+;;
+;;   6. This is NOT a standard Forth word!
+native "S>NUMBER?", 9, STRING_TO_NUMBER
+    pop rsi                     ; length
+    pop rdi                     ; address
+    mov rdx, riprel(base)       ; base
+    call string_to_int
 
-    ; push rax                    ; number
-    ; push rdx                    ; flag
+    push rax                    ; number
+    push rdx                    ; flag
     next
 
 ;; ( "<spaces>name<space>" -- )

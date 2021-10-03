@@ -11,6 +11,7 @@ extern read_char
 extern parse_name
 extern string_case_compare
 extern string_copy
+extern string_to_int
 
 extern DOCOL
 extern DOVAR

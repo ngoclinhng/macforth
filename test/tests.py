@@ -285,6 +285,58 @@ def type_test():
 
     return (tcount, fcount)
 
+def string_to_number_test():
+    (tcount, fcount) = (0, 0)
+
+    numbers = list(range(-16, 16))
+    numbers += [123, -123, 1024, -1024, 123456, -123456]
+
+    base2 = [(bin(n), 2, n) for n in numbers]
+    base8 = [(oct(n), 8, n) for n in numbers]
+    base10 = [(repr(n), 10, n) for n in numbers]
+    base16 = [(hex(n), 16, n) for n in numbers]
+
+    cases = base2 + base8 + base10 + base16
+
+    for (s, b, n) in cases:
+        tcount += 1
+        args = [repr(s), b, n]
+        checker = expect(stdout=repr(n), status=0)
+        fcount += test_case('STRING_TO_NUMBER_test', checker=checker,
+                            args=args)
+
+    error_cases = [
+        ('foo', 2),
+        ('foo', 8),
+        ('foo', 10),
+        ('foo', 16),
+
+        (bin(1), 8),
+        (bin(1), 10),
+        (bin(1), 16),
+
+        (oct(1), 2),
+        (oct(1), 10),
+        (oct(1), 16),
+
+        (hex(1), 2),
+        (hex(1), 8),
+        (hex(1), 10),
+
+        ('1', 2),
+        ('1', 8),
+        ('1', 16)
+    ]
+
+    for (s, b) in error_cases:
+        tcount += 1
+        args = [repr(s), b, 0]
+        checker = expect(stdout='', status=1)
+        fcount += test_case('STRING_TO_NUMBER_test', checker=checker,
+                            args=args)
+
+    return (tcount, fcount)
+
 TEST_SUITES = {
     'init': init_test,
     'key': key_test,
@@ -297,7 +349,8 @@ TEST_SUITES = {
     'execute': execute_test,
     'latest': latest_test,
     'create': create_test,
-    'type': type_test
+    'type': type_test,
+    'string_to_number': string_to_number_test
 }
 
 def print_summary(summary):
