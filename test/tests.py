@@ -337,6 +337,18 @@ def string_to_number_test():
 
     return (tcount, fcount)
 
+def comma_test():
+    (tcount, fcount) = (0, 0)
+
+    triples = [(0, 0, 0), (1, 2, 3), (0, -1, 11), (234, 33, 1234567)]
+
+    for args in triples:
+        tcount += 1
+        checker = expect_status_to_be(0)
+        fcount += test_case('COMMA_test', checker=checker, args=args)
+
+    return (tcount, fcount)
+
 TEST_SUITES = {
     'init': init_test,
     'key': key_test,
@@ -350,7 +362,8 @@ TEST_SUITES = {
     'latest': latest_test,
     'create': create_test,
     'type': type_test,
-    'string_to_number': string_to_number_test
+    'string_to_number': string_to_number_test,
+    'comma': comma_test
 }
 
 def print_summary(summary):

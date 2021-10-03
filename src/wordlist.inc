@@ -227,6 +227,23 @@ native "]", 1, RBRACKET, F_IMMEDIATE
     mov qword riprel(state), 1
     next
 
+;; ( x -- )
+;; Reserve one cell of the data space and store x in the cell.
+;;
+;;   ---------------+-----------------+---------------
+;;   ...............|        x        | ..............
+;;   ---------------+-----------------+---------------
+;;                  ^---- 8 bytes ----^
+;;                  |                 |
+;;                 here(before)      here(after)
+;;
+;; Note that: here(before) must be 8-byte aligned!
+native ",", 1, COMMA
+    mov rax, riprel(here)       ; here
+    pop qword [rax]             ; store TOS (x) at here
+    add qword riprel(here), 8   ; advance here to point to next cell
+    next
+
 ;; ( char -- )
 ;; Writes 1 byte to stdout. If TOS is not a single character code,
 ;; its lowest byte will be printed out instead.
