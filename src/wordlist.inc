@@ -164,6 +164,24 @@ colon "CREATE", 6, CREATE
     dq code_field_addr(COMMA)
     dq code_field_addr(EXIT)
 
+;; Starts a colon definition
+; colon ":", 1, COLON
+;     ; Create Header part
+;     dq code_field_addr(HEADER)
+
+;     ; Append DOCOL
+;     dq code_field_addr(LIT), DOCOL
+;     dq code_field_addr(COMMA)
+
+;     ; Mark the new definition as HIDDEN
+;     dq code_field_addr(LATEST)
+;     dq code_field_addr(FETCH)
+;     dq code_field_addr(HIDDEN)
+
+;     ; Enter compilation state
+;     dq code_field_addr(RBRACKET)
+;     dq code_field_addr(EXIT)
+
 ;; ( i * x xt -- j * x )
 ;; Remove xt (Code Field Address) from the stack and perform the semantics
 ;; identified by it. Other stack effects are due to the word EXECUTEd.
@@ -288,6 +306,14 @@ native ",", 1, COMMA
     mov rax, riprel(here)       ; here
     pop qword [rax]             ; store TOS (x) at here
     add qword riprel(here), 8   ; advance here to point to next cell
+    next
+
+;; Make the most recent definition an IMMEDIATE word.
+;; Typical use: : X ... ; IMMEDIATE
+native "IMMEDIATE", 9, IMMEDIATE
+    mov rax, riprel(latest)     ; address of the latest word
+    add rax, 8                  ; address of its Flags Field
+    or byte[rax], F_IMMEDIATE   ; turn on IMMEDIATE Flag
     next
 
 ;; ( char -- )
