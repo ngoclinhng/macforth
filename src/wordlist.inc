@@ -241,14 +241,14 @@ native ">CFA", 4, TO_CFA
     jmp next
 
 ;; Enter interpretation state (i.e., set the variable STATE to 0).
-;; This is an IMMEDIATE word.
+;; This is an IMMEDIATE word because we would otherwise never be able to
+;; switch back to the interpretation mode from compilation mode!
 native "[", 1, LBRACKET, F_IMMEDIATE
     mov qword riprel(state), 0
     next
 
 ;; Enter compilation state (i.e., set the variable STATE to 1).
-;; This is an IMMEDIATE word.
-native "]", 1, RBRACKET, F_IMMEDIATE
+native "]", 1, RBRACKET
     mov qword riprel(state), 1
     next
 
