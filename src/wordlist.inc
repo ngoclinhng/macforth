@@ -309,11 +309,25 @@ native ",", 1, COMMA
     next
 
 ;; Make the most recent definition an IMMEDIATE word.
-;; Typical use: : X ... ; IMMEDIATE
 native "IMMEDIATE", 9, IMMEDIATE
     mov rax, riprel(latest)     ; address of the latest word
     add rax, 8                  ; address of its Flags Field
     or byte[rax], F_IMMEDIATE   ; turn on IMMEDIATE Flag
+    next
+
+;; Hide the most recent definition, so that FIND_NAME won't be able to
+;; find it.
+native "HIDE", 4, HIDE
+    mov rax, riprel(latest)     ; address of the latest word
+    add rax, 8                  ; address of its Flags Field
+    or byte[rax], F_HIDDEN      ; turn on HIDDEN Flag
+    next
+
+;; Reveal the most recent definition. This is the inverse of HIDE.
+native "REVEAL", 6, REVEAL
+    mov rax, riprel(latest)     ; address of the latest word
+    add rax, 8                  ; address of its Flags Field
+    and byte[rax], ~F_HIDDEN    ; turn off HIDDEN Flag
     next
 
 ;; ( char -- )
