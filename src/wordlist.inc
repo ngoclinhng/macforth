@@ -74,32 +74,30 @@ native "S>NUMBER?", 9, STRING_TO_NUMBER
     next
 
 ;; ( "<spaces>name<space>" -- )
-;; Skip leading spaces. Parse `name` delimited by a space. Create new word
-;; for `name` and append it to the wordlist.
+;; Skip leading spaces. Parse `name` delimited by a space. Create the
+;; Header Part for `name`.
+;; This is how (part of) the data space looks like after the command
+;; HEADER FOO
 ;;
-;; Example: CREATE FOO
+;;           <-------------- Header ------------>
+;;   ----------+--------+---+---+---+---+---+-----+-----------------
+;;   ..........|  LINK  | 0 | 3 | F | O | O | ... | ................
+;;   ----------+---8----+-1-+-1-+---+---+---+-----+-----------------
+;;             ^                                  ^
+;;             |                                  |
+;;          latest(here before)                 here(after, 8-byte aligned)
 ;;
-;;
-;;           <-------------- Header ------------><- CF -><-- PA----
-;; ----------+--------+---+---+---+---+---+-----+-------+-----------
-;; ..........|  LINK  | 0 | 3 | F | O | O | ... | DOVAR | ..........
-;; ----------+---8----+-1-+-1-+---+---+---+-----+---8---+-----------
-;;           ^                                          ^
-;;           |                                          |
-;;        latest                                       here
-;;
-;; After the command `CREATE FOO`:
+;; After the command HEADER FOO
 ;;
 ;;   a. `latest` points to FOO, i.e., the contents of the memory cell
 ;;      designated by `latest` is the address of the word FOO.
 ;;
-;;   b. The data-space pointer `here` points to the address of FOO's
-;;      Parameter Field (a.k.a Data Field).
+;;   b. The data-space pointer `here` points to a memory cell - which is
+;;      going to be the address of FOO's Code Field. `here` is guaranteed
+;;      to be 8-byte aligned.
 ;;
-;;   c. The contents of FOO's Code Field is DOVAR (a memory address), and
-;;      what DOVAR does (when FOO is executed) is to put the address of
-;;      FOO's Parameter Field ([here]) onto the data stack.
-native "CREATE", 6, CREATE
+;; Note that this is not a standard ANSI word.
+native "HEADER", 6, HEADER
     ; rax = name's address, rdx = name's length
     call parse_name
     mov rsi, rax
@@ -126,18 +124,45 @@ native "CREATE", 6, CREATE
     pop rdx
     pop rdi
 
-    ; Code Field Address (8-byte aligned)
+    ; Update here
     add rdi, rdx
     add rdi, 0x7
     and rdi, ~0x7
-    lea rax, riprel(DOVAR)
-    mov [rdi], rax
-
-    ; Update Here
-    add rdi, 8
     mov riprel(here), rdi
 
     next
+
+;; ( "<spaces>name<space>" -- )
+;; Skip leading spaces. Parse `name` delimited by a space. Create new word
+;; for `name` and append it to the wordlist.
+;;
+;; Example: CREATE FOO
+;;
+;;
+;;           <-------------- Header ------------><- CF -><-- PA----
+;; ----------+--------+---+---+---+---+---+-----+-------+-----------
+;; ..........|  LINK  | 0 | 3 | F | O | O | ... | DOVAR | ..........
+;; ----------+---8----+-1-+-1-+---+---+---+-----+---8---+-----------
+;;           ^                                          ^
+;;           |                                          |
+;;        latest                                       here
+;;
+;; After the command `CREATE FOO`:
+;;
+;;   a. `latest` points to FOO, i.e., the contents of the memory cell
+;;      designated by `latest` is the address of the word FOO.
+;;
+;;   b. The data-space pointer `here` points to the address of FOO's
+;;      Parameter Field (a.k.a Data Field).
+;;
+;;   c. The contents of FOO's Code Field is DOVAR (a memory address), and
+;;      what DOVAR does (when FOO is executed) is to put the address of
+;;      FOO's Parameter Field ([here]) onto the data stack.
+colon "CREATE", 6, CREATE
+    dq code_field_addr(HEADER)
+    dq code_field_addr(LIT), DOVAR
+    dq code_field_addr(COMMA)
+    dq code_field_addr(EXIT)
 
 ;; ( i * x xt -- j * x )
 ;; Remove xt (Code Field Address) from the stack and perform the semantics
@@ -225,6 +250,27 @@ native "[", 1, LBRACKET, F_IMMEDIATE
 ;; This is an IMMEDIATE word.
 native "]", 1, RBRACKET, F_IMMEDIATE
     mov qword riprel(state), 1
+    next
+
+;; A number that appears in a colon definition is called a "literal". For
+;; example, the "4" in the definition
+;;
+;;   : FOUR-MORE 4 + ;
+;;
+;; The use of a literal in a colon definition requires two cells. The first
+;; contains the Code Field Address of the word LIT which, when executed,
+;; will push the contents of the second cell (the number itself) onto the
+;; stack.
+;;
+;;   -------+------------+-------+-------+-------+-------+-------+-------
+;;   ...... |   HEADER   | DOCOL |  LIT  |   4   |   +   |  EXIT | ......
+;;   -------+------------+-------+-------+-------+-------+-------+-------
+;;
+;; When the colon compiler encounters a number, it first appends LIT to
+;; the current definition, and then the number itself.
+native "LIT", 3, LIT
+    push qword [pc]
+    add pc, 8
     next
 
 ;; ( x -- )
